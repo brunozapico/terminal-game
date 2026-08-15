@@ -149,17 +149,47 @@
     .terminal-title { color: var(--muted); font: 11px var(--mono); }
     .terminal-head-spacer { flex: 1; }
     .scenario-state { color: var(--green); font: 10px var(--mono); }
-    .terminal-window { flex: 1; min-height: 540px; display: flex; flex-direction: column; padding: 20px 20px 16px; background: radial-gradient(circle at 88% 0%, rgba(131,213,162,.035), transparent 27%), #080b0e; }
+    .terminal-window { position: relative; flex: 1; min-height: 540px; display: flex; flex-direction: column; padding: 20px 20px 16px; background: radial-gradient(circle at 88% 0%, rgba(131,213,162,.035), transparent 27%), #080b0e; }
     .terminal-output { flex: 1; overflow: auto; padding-right: 4px; font: 13px/1.65 var(--mono); scrollbar-color: #2a343d transparent; }
     .terminal-line { white-space: pre-wrap; overflow-wrap: anywhere; }
     .terminal-command { color: #dce7ec; }
     .terminal-command .prompt { color: var(--green); }
     .terminal-stdout { color: #b8c5cc; }
+    .terminal-success-line { color: var(--green); font-weight: 700; }
     .terminal-stderr { color: var(--red); }
     .terminal-system { color: var(--muted-2); }
     .terminal-input-row { display: flex; align-items: baseline; gap: 9px; margin-top: 13px; color: var(--green); font: 13px var(--mono); }
     .terminal-prompt { flex: 0 0 auto; white-space: pre; }
     .terminal-input { min-width: 0; flex: 1; padding: 0; border: 0; outline: 0; color: #f4f7f8; background: transparent; font: inherit; caret-color: var(--green); }
+    .terminal-celebration { position: absolute; inset: 16px; z-index: 2; display: grid; place-items: center; overflow: hidden; border: 1px solid rgba(131,213,162,.45); border-radius: 12px; background: radial-gradient(circle at 50% 42%, rgba(131,213,162,.18), rgba(8,11,14,.95) 62%); pointer-events: none; }
+    .terminal-celebration[hidden] { display: none; }
+    .celebration-card { position: relative; z-index: 1; width: min(420px, calc(100% - 24px)); padding: 28px 30px; border: 1px solid rgba(131,213,162,.35); border-radius: 14px; background: rgba(10,18,14,.9); box-shadow: 0 18px 60px rgba(0,0,0,.45), 0 0 40px rgba(131,213,162,.1); text-align: center; }
+    .celebration-mark { display: grid; place-items: center; width: 54px; height: 54px; margin: 0 auto 14px; border: 2px solid var(--green); border-radius: 50%; color: var(--green); font-size: 28px; font-weight: 800; line-height: 1; }
+    .celebration-kicker { display: block; color: var(--green); font: 750 10px var(--mono); letter-spacing: .16em; text-transform: uppercase; }
+    .celebration-card strong { display: block; margin-top: 7px; color: var(--text); font-size: clamp(20px, 3vw, 28px); letter-spacing: -.04em; }
+    .celebration-message, .celebration-hint { display: block; color: #d9e9df; font-size: 13px; }
+    .celebration-message { margin-top: 9px; }
+    .celebration-hint { margin-top: 8px; color: var(--muted); font-size: 11px; }
+    .celebration-confetti { position: absolute; inset: 0; overflow: hidden; }
+    .celebration-confetti i { position: absolute; top: 50%; left: 50%; width: 7px; height: 13px; border-radius: 2px; opacity: 0; background: var(--green); }
+    .celebration-confetti i:nth-child(1) { --dx: -220px; --dy: -145px; --spin: 240deg; --delay: .02s; background: var(--green); }
+    .celebration-confetti i:nth-child(2) { --dx: -165px; --dy: -185px; --spin: -180deg; --delay: .08s; background: var(--amber); }
+    .celebration-confetti i:nth-child(3) { --dx: -105px; --dy: -125px; --spin: 160deg; --delay: .14s; background: var(--blue); }
+    .celebration-confetti i:nth-child(4) { --dx: -50px; --dy: -205px; --spin: -260deg; --delay: .05s; background: var(--green); }
+    .celebration-confetti i:nth-child(5) { --dx: 42px; --dy: -178px; --spin: 220deg; --delay: .12s; background: var(--amber); }
+    .celebration-confetti i:nth-child(6) { --dx: 108px; --dy: -132px; --spin: -210deg; --delay: .04s; background: var(--blue); }
+    .celebration-confetti i:nth-child(7) { --dx: 168px; --dy: -190px; --spin: 280deg; --delay: .1s; background: var(--green); }
+    .celebration-confetti i:nth-child(8) { --dx: 220px; --dy: -112px; --spin: -160deg; --delay: .16s; background: var(--amber); }
+    .celebration-confetti i:nth-child(9) { --dx: -195px; --dy: 105px; --spin: -230deg; --delay: .18s; background: var(--blue); }
+    .celebration-confetti i:nth-child(10) { --dx: -125px; --dy: 148px; --spin: 190deg; --delay: .06s; background: var(--green); }
+    .celebration-confetti i:nth-child(11) { --dx: 125px; --dy: 140px; --spin: -280deg; --delay: .13s; background: var(--amber); }
+    .celebration-confetti i:nth-child(12) { --dx: 195px; --dy: 96px; --spin: 210deg; --delay: .2s; background: var(--blue); }
+    .terminal-celebration.celebration-active .celebration-card { animation: celebration-card-in .62s cubic-bezier(.2,.8,.2,1) both; }
+    .terminal-celebration.celebration-active .celebration-mark { animation: celebration-mark-pop .72s cubic-bezier(.2,1.5,.4,1) .12s both; }
+    .terminal-celebration.celebration-active .celebration-confetti i { animation: celebration-burst 1.7s cubic-bezier(.18,.75,.35,1) var(--delay) both; }
+    @keyframes celebration-card-in { from { opacity: 0; transform: translateY(12px) scale(.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes celebration-mark-pop { from { opacity: 0; transform: scale(.45) rotate(-18deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+    @keyframes celebration-burst { 0% { opacity: 0; transform: translate3d(-50%, -50%, 0) scale(.2) rotate(0); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate3d(calc(-50% + var(--dx)), calc(-50% + var(--dy)), 0) scale(1) rotate(var(--spin)); } }
     .terminal-foot { min-height: 40px; padding: 0 18px; display: flex; align-items: center; gap: 17px; color: var(--muted-2); border-top: 1px solid var(--line); font-size: 10px; }
     .key { display: inline-flex; align-items: center; gap: 4px; }
     kbd { padding: 2px 5px; border: 1px solid var(--line-strong); border-radius: 4px; color: var(--muted); background: #151a20; font: 10px var(--mono); }
@@ -238,6 +268,12 @@
       .search-box { margin-top: 18px; width: 100%; }
       .library-grid { grid-template-columns: 1fr; }
     }
+    @media (prefers-reduced-motion: reduce) {
+      .terminal-celebration.celebration-active .celebration-card,
+      .terminal-celebration.celebration-active .celebration-mark,
+      .terminal-celebration.celebration-active .celebration-confetti i { animation: none; }
+      .celebration-card, .celebration-mark { opacity: 1; transform: none; }
+    }
   </style>
 </head>
 <body>
@@ -296,6 +332,16 @@
           <section class="terminal-card" aria-label="Lesson terminal">
             <div class="terminal-head"><div class="traffic"><i></i><i></i><i></i></div><span class="terminal-title">terminal — simulated session</span><span class="terminal-head-spacer"></span><span class="scenario-state" id="scenarioState">LOCAL</span></div>
             <div class="terminal-window" id="lessonTerminalWindow">
+              <div class="terminal-celebration" id="terminalCelebration" hidden role="status" aria-live="polite" aria-atomic="true">
+                <div class="celebration-confetti" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                <div class="celebration-card">
+                  <span class="celebration-mark" aria-hidden="true">✓</span>
+                  <span class="celebration-kicker">Quest complete</span>
+                  <strong>66 challenges cleared</strong>
+                  <span class="celebration-message">Congratulations, <span id="celebrationUser">learner</span>!</span>
+                  <span class="celebration-hint">Every challenge is now open for review.</span>
+                </div>
+              </div>
               <div class="terminal-output" id="lessonOutput" aria-live="polite"></div>
               <div class="terminal-input-row"><span class="terminal-prompt" id="lessonPrompt"></span><input class="terminal-input" id="lessonInput" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Terminal input"></div>
             </div>
@@ -1494,7 +1540,7 @@
         learnView: $("learnView"), practiceView: $("practiceView"), commandsView: $("commandsView"), navButtons: [...document.querySelectorAll("[data-view]")],
         lessonLevel: $("lessonLevel"), lessonBossLabel: $("lessonBossLabel"), lessonTitle: $("lessonTitle"), lessonExplanation: $("lessonExplanation"), lessonPlatforms: $("lessonPlatforms"), lessonExample: $("lessonExample"), lessonObjective: $("lessonObjective"), lessonObjectiveText: $("lessonObjectiveText"),
         hintBox: $("hintBox"), hintLabel: $("hintLabel"), hintText: $("hintText"), hintButton: $("hintButton"), revealButton: $("revealButton"), resetChallenge: $("resetChallenge"), checkChallenge: $("checkChallenge"), continueChallenge: $("continueChallenge"), challengeFeedback: $("challengeFeedback"), feedbackTitle: $("feedbackTitle"), feedbackDetail: $("feedbackDetail"),
-        challengeProgressText: $("challengeProgressText"), challengeProgressPercent: $("challengeProgressPercent"), challengeProgressBar: $("challengeProgressBar"), levelNav: $("levelNav"), challengeNav: $("challengeNav"), challengeNavStatus: $("challengeNavStatus"), scenarioState: $("scenarioState"), topLevel: $("topLevel"), topXp: $("topXp"), topStreak: $("topStreak"),
+        challengeProgressText: $("challengeProgressText"), challengeProgressPercent: $("challengeProgressPercent"), challengeProgressBar: $("challengeProgressBar"), levelNav: $("levelNav"), challengeNav: $("challengeNav"), challengeNavStatus: $("challengeNavStatus"), terminalCelebration: $("terminalCelebration"), celebrationUser: $("celebrationUser"), scenarioState: $("scenarioState"), topLevel: $("topLevel"), topXp: $("topXp"), topStreak: $("topStreak"),
         commandSearch: $("commandSearch"), commandFilters: $("commandFilters"), commandGrid: $("commandGrid"), resetPractice: $("resetPractice")
       };
       const lessonBinding = { output: $("lessonOutput"), prompt: $("lessonPrompt"), input: $("lessonInput"), engine: null, type: "lesson" };
@@ -1581,7 +1627,21 @@
           binding.output.innerHTML = "";
         }
       }
+      function hideCelebration() {
+        refs.terminalCelebration.hidden = true;
+        refs.terminalCelebration.classList.remove("celebration-active");
+      }
+      function showCelebration() {
+        if (!refs.terminalCelebration.hidden) return;
+        refs.celebrationUser.textContent = state.data.user || "learner";
+        refs.terminalCelebration.hidden = false;
+        refs.terminalCelebration.classList.remove("celebration-active");
+        void refs.terminalCelebration.offsetWidth;
+        refs.terminalCelebration.classList.add("celebration-active");
+        appendTerminalText(lessonBinding, "\n✓ QUEST COMPLETE\n66 challenges cleared. Congratulations!\n", "terminal-success-line");
+      }
       function resetLessonTerminal() {
+        hideCelebration();
         const scenario = currentChallenge.setup();
         lessonBinding.engine = new TerminalEngine(scenario);
         showTerminalIntro(lessonBinding, "Terminal Quest simulation · safe virtual filesystem\nType help if you need a reference.\n");
@@ -1700,7 +1760,7 @@
         try { validation = currentChallenge.validator(check); } catch (error) { validation = checkResult(false, "Validation found an internal problem. Reset the challenge and try again."); }
         const valid = typeof validation === "boolean" ? validation : validation?.ok;
         if (!valid) { setFeedback("error", "The current state does not meet the objective yet.", validation?.message || "Keep exploring the terminal output."); return; }
-        if (state.isCompleted(currentChallenge.id)) { setFeedback("info", "✓ Challenge already complete", "You can repeat it for practice or continue to the next mission."); refs.checkChallenge.hidden = true; refs.continueChallenge.hidden = false; return; }
+        if (state.isCompleted(currentChallenge.id)) { setFeedback("info", "✓ Challenge already complete", "You can repeat it for practice or continue to the next mission."); refs.checkChallenge.hidden = true; refs.continueChallenge.hidden = false; if (state.firstIncompleteIndex() < 0 && currentIndex === challengeList.length - 1) showCelebration(); return; }
         const gained = state.complete(currentChallenge);
         setFeedback("success", "✓ Challenge complete", `+${gained} XP · ${state.hintLevel(currentChallenge.id) === 0 ? "no hints" : "hint used"}`);
         refs.checkChallenge.hidden = true;
@@ -1708,6 +1768,7 @@
         renderProgress();
         renderLevelNav();
         renderChallengeNav();
+        if (state.firstIncompleteIndex() < 0) showCelebration();
         showToast(`+${gained} XP`);
       }
       function showNextHint() {

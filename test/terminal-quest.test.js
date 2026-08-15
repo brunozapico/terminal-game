@@ -127,4 +127,10 @@ test("all 66 challenges can be completed", async () => {
   }
 
   assert.equal(window.document.getElementById("challengeProgressText").textContent, "66 / 66 challenges");
+  const celebration = window.document.getElementById("terminalCelebration");
+  assert.equal(celebration.hidden, false);
+  assert.equal(celebration.classList.contains("celebration-active"), true);
+  assert.match(celebration.textContent, /66 challenges cleared/);
+  assert.equal(celebration.querySelectorAll(".celebration-confetti i").length, 12);
+  assert.match(window.document.getElementById("lessonOutput").textContent, /QUEST COMPLETE/);
 });
