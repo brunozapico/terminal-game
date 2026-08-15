@@ -12,6 +12,17 @@ It can also be published as a static site on Vercel:
 2. Choose any static preset or leave the framework empty.
 3. Use `./` as the root directory with no build command.
 
+## Test
+
+Install the development dependency and run the browser-like regression suite:
+
+```bash
+npm ci
+npm test
+```
+
+The suite checks the social metadata and header structure, verifies the personalized onboarding flow, and completes all 66 challenges through the rendered terminal UI. GitHub Actions runs it on every push and pull request.
+
 ## Add commands
 
 In the `<script>` of `index.html`, register a command with `registerCommand("name", { ... })`. Each definition can include:
