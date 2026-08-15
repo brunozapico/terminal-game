@@ -1,0 +1,1686 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a0c0f">
+  <title>Terminal Quest — Learn by using the terminal</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #080a0d;
+      --panel: #0d1014;
+      --panel-raised: #11151a;
+      --panel-soft: #151a20;
+      --line: #242b33;
+      --line-strong: #34404b;
+      --text: #f1f4f6;
+      --muted: #8e9aa5;
+      --muted-2: #66727d;
+      --green: #83d5a2;
+      --green-soft: rgba(131, 213, 162, .12);
+      --red: #e88b8b;
+      --red-soft: rgba(232, 139, 139, .12);
+      --amber: #e0b87a;
+      --blue: #92b9e8;
+      --shadow: 0 20px 60px rgba(0,0,0,.35);
+      --radius: 14px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--bg); }
+    body { color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.5; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+    .app { min-height: 100vh; display: flex; flex-direction: column; }
+    .topbar {
+      height: 68px; padding: 0 28px; display: flex; align-items: center; gap: 28px;
+      border-bottom: 1px solid var(--line); background: rgba(8,10,13,.86); backdrop-filter: blur(18px);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .brand { display: flex; align-items: center; gap: 11px; border: 0; padding: 0; color: var(--text); background: transparent; text-align: left; }
+    .brand-mark { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--line-strong); border-radius: 8px; background: #10151a; color: var(--green); font: 700 13px var(--mono); box-shadow: inset 0 0 0 1px rgba(255,255,255,.02); }
+    .brand-title { font-weight: 650; letter-spacing: -.02em; }
+    .brand-subtitle { color: var(--muted); font-size: 11px; margin-top: -2px; }
+    .nav { display: flex; align-items: center; gap: 4px; margin-left: 8px; }
+    .nav button, .text-button { border: 0; border-radius: 8px; padding: 8px 11px; color: var(--muted); background: transparent; }
+    .nav button:hover, .text-button:hover { color: var(--text); background: var(--panel-soft); }
+    .nav button.active { color: var(--text); background: #171d23; box-shadow: inset 0 0 0 1px var(--line); }
+    .topbar-spacer { flex: 1; }
+    .top-stats { display: flex; align-items: center; gap: 18px; }
+    .stat { display: flex; flex-direction: column; gap: 1px; min-width: 54px; }
+    .stat-label { color: var(--muted-2); text-transform: uppercase; letter-spacing: .11em; font-size: 9px; font-weight: 700; }
+    .stat-value { color: var(--text); font: 650 13px var(--mono); }
+    .reset-link { color: var(--muted-2); font-size: 11px; }
+    .reset-link:hover { color: var(--red); }
+
+    main { flex: 1; width: min(1500px, 100%); margin: 0 auto; padding: 28px; }
+    .view { display: none; }
+    .view.active { display: block; animation: view-in .22s ease-out; }
+    @keyframes view-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .learn-grid { display: grid; grid-template-columns: minmax(300px, 390px) minmax(0, 1fr); gap: 18px; align-items: stretch; }
+    .panel, .terminal-card, .library-shell { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow); }
+    .lesson-panel { min-height: calc(100vh - 124px); padding: 26px; display: flex; flex-direction: column; }
+    .eyebrow { color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; }
+    .eyebrow span { color: var(--green); }
+    h1, h2, h3, p { margin: 0; }
+    .lesson-title { margin-top: 8px; font-size: clamp(24px, 2.4vw, 32px); letter-spacing: -.045em; line-height: 1.1; }
+    .lesson-explanation { margin-top: 13px; color: var(--muted); max-width: 42ch; }
+    .platforms { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
+    .platform-badge, .tag { display: inline-flex; align-items: center; min-height: 22px; padding: 3px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 10px; font-weight: 650; letter-spacing: .03em; }
+    .platform-badge.mac { color: #d3e3f7; border-color: rgba(146,185,232,.35); background: rgba(146,185,232,.08); }
+    .platform-badge.linux { color: #e8d5b2; border-color: rgba(224,184,122,.35); background: rgba(224,184,122,.08); }
+    .section-label { margin-top: 25px; color: var(--muted-2); font-size: 10px; text-transform: uppercase; letter-spacing: .13em; font-weight: 750; }
+    .example { margin-top: 8px; padding: 13px 14px; border: 1px solid var(--line); border-radius: 9px; color: #d6e2e9; background: #090c0f; overflow: auto; font: 12px/1.65 var(--mono); white-space: pre-wrap; }
+    .objective { margin-top: 8px; padding: 14px; border-left: 2px solid var(--green); border-radius: 0 9px 9px 0; background: var(--green-soft); color: #e4ece7; }
+    .objective strong { display: block; color: var(--green); font-size: 11px; text-transform: uppercase; letter-spacing: .09em; margin-bottom: 4px; }
+    .objective.boss { border-left-color: var(--amber); background: rgba(224,184,122,.09); }
+    .objective.boss strong { color: var(--amber); }
+    .lesson-spacer { flex: 1; min-height: 18px; }
+    .hint-box, .feedback { display: none; margin-top: 12px; padding: 11px 12px; border-radius: 9px; font-size: 12px; }
+    .hint-box.visible { display: block; color: #e6d7b9; border: 1px solid rgba(224,184,122,.25); background: rgba(224,184,122,.08); }
+    .hint-box strong { display: block; color: var(--amber); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 3px; }
+    .feedback.visible { display: block; }
+    .feedback.success { color: #dff3e6; border: 1px solid rgba(131,213,162,.3); background: var(--green-soft); }
+    .feedback.error { color: #f1dada; border: 1px solid rgba(232,139,139,.26); background: var(--red-soft); }
+    .feedback.info { color: #d5e2f1; border: 1px solid rgba(146,185,232,.25); background: rgba(146,185,232,.08); }
+    .feedback-title { font-weight: 700; }
+    .feedback-detail { margin-top: 3px; color: var(--muted); }
+    .lesson-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .primary-button, .secondary-button, .ghost-button {
+      border-radius: 8px; padding: 9px 12px; border: 1px solid var(--line-strong); color: var(--text); background: #171d23; transition: .16s ease;
+    }
+    .primary-button { color: #061009; border-color: var(--green); background: var(--green); font-weight: 750; }
+    .primary-button:hover { background: #a4e4b9; transform: translateY(-1px); }
+    .secondary-button:hover, .ghost-button:hover { border-color: #53616e; background: #202830; }
+    .ghost-button { color: var(--muted); background: transparent; }
+    .ghost-button:disabled, .secondary-button:disabled { cursor: not-allowed; opacity: .45; }
+    .level-progress { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--line); }
+    .progress-line { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 11px; }
+    .progress-track { height: 5px; overflow: hidden; border-radius: 999px; background: #1d242b; margin-top: 8px; }
+    .progress-track span { display: block; height: 100%; border-radius: inherit; background: var(--green); transition: width .3s ease; }
+    .level-nav { margin-top: 18px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+    .level-item { min-height: 27px; padding: 4px 2px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted-2); background: transparent; font: 10px var(--mono); }
+    .level-item:hover:not(:disabled) { color: var(--text); border-color: var(--line-strong); }
+    .level-item.current { color: var(--green); border-color: rgba(131,213,162,.45); background: var(--green-soft); }
+    .level-item.done { color: var(--text); }
+    .level-item:disabled { cursor: not-allowed; opacity: .45; }
+
+    .terminal-card { min-height: calc(100vh - 124px); display: flex; flex-direction: column; overflow: hidden; }
+    .terminal-head { min-height: 58px; padding: 0 18px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); background: #101419; }
+    .traffic { display: flex; gap: 6px; }
+    .traffic i { width: 9px; height: 9px; border-radius: 50%; background: #3a444e; }
+    .traffic i:nth-child(1) { background: #9b6767; }
+    .traffic i:nth-child(2) { background: #a18c5e; }
+    .traffic i:nth-child(3) { background: #648f72; }
+    .terminal-title { color: var(--muted); font: 11px var(--mono); }
+    .terminal-head-spacer { flex: 1; }
+    .scenario-state { color: var(--green); font: 10px var(--mono); }
+    .terminal-window { flex: 1; min-height: 540px; display: flex; flex-direction: column; padding: 20px 20px 16px; background: radial-gradient(circle at 88% 0%, rgba(131,213,162,.035), transparent 27%), #080b0e; }
+    .terminal-output { flex: 1; overflow: auto; padding-right: 4px; font: 13px/1.65 var(--mono); scrollbar-color: #2a343d transparent; }
+    .terminal-line { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .terminal-command { color: #dce7ec; }
+    .terminal-command .prompt { color: var(--green); }
+    .terminal-stdout { color: #b8c5cc; }
+    .terminal-stderr { color: var(--red); }
+    .terminal-system { color: var(--muted-2); }
+    .terminal-input-row { display: flex; align-items: baseline; gap: 9px; margin-top: 13px; color: var(--green); font: 13px var(--mono); }
+    .terminal-prompt { flex: 0 0 auto; white-space: pre; }
+    .terminal-input { min-width: 0; flex: 1; padding: 0; border: 0; outline: 0; color: #f4f7f8; background: transparent; font: inherit; caret-color: var(--green); }
+    .terminal-foot { min-height: 40px; padding: 0 18px; display: flex; align-items: center; gap: 17px; color: var(--muted-2); border-top: 1px solid var(--line); font-size: 10px; }
+    .key { display: inline-flex; align-items: center; gap: 4px; }
+    kbd { padding: 2px 5px; border: 1px solid var(--line-strong); border-radius: 4px; color: var(--muted); background: #151a20; font: 10px var(--mono); }
+
+    .practice-shell { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 18px; min-height: calc(100vh - 124px); }
+    .practice-info { padding: 26px; }
+    .practice-info h1, .library-header h1 { margin-top: 8px; font-size: 30px; letter-spacing: -.045em; }
+    .practice-info p { margin-top: 12px; color: var(--muted); }
+    .practice-note { margin-top: 22px; padding: 13px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); font-size: 12px; }
+    .practice-note strong { display: block; color: var(--text); margin-bottom: 4px; }
+    .practice-terminal { min-height: calc(100vh - 124px); }
+
+    .library-shell { padding: 28px; }
+    .library-header { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
+    .library-header p { margin-top: 10px; color: var(--muted); }
+    .search-box { width: min(330px, 100%); padding: 11px 13px; border: 1px solid var(--line-strong); border-radius: 8px; outline: 0; color: var(--text); background: #0a0d10; }
+    .search-box:focus { border-color: var(--blue); }
+    .library-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+    .filter-button { padding: 6px 9px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: transparent; font-size: 11px; }
+    .filter-button.active, .filter-button:hover { color: var(--text); border-color: var(--line-strong); background: var(--panel-soft); }
+    .library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 18px; }
+    .command-card { padding: 15px; border: 1px solid var(--line); border-radius: 10px; background: #0d1115; }
+    .command-card:hover { border-color: #3b4752; }
+    .command-name { color: var(--green); font: 700 13px var(--mono); }
+    .command-description { margin-top: 6px; min-height: 36px; color: var(--muted); font-size: 12px; }
+    .command-example { margin-top: 11px; padding: 8px; border-radius: 6px; color: #d7e2e7; background: #080b0e; font: 11px/1.5 var(--mono); white-space: pre-wrap; }
+    .command-options { margin-top: 9px; color: var(--muted-2); font-size: 10px; }
+    .command-options span { display: block; color: var(--muted); }
+    .command-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 12px; }
+    .empty-library { grid-column: 1 / -1; padding: 32px; text-align: center; color: var(--muted); }
+
+    .modal-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: rgba(3,5,7,.78); backdrop-filter: blur(10px); }
+    .modal-backdrop.hidden { display: none; }
+    .onboarding { width: min(470px, 100%); padding: 36px; border: 1px solid var(--line-strong); border-radius: 18px; background: #0e1216; box-shadow: 0 30px 100px rgba(0,0,0,.55); text-align: center; }
+    .onboarding .brand-mark { margin: 0 auto 18px; width: 38px; height: 38px; font-size: 16px; }
+    .onboarding h1 { font-size: 38px; letter-spacing: -.06em; }
+    .onboarding p { margin: 12px auto 0; max-width: 28ch; color: var(--muted); font-size: 16px; }
+    .onboarding .platforms { justify-content: center; margin-top: 20px; }
+    .onboarding .primary-button { margin-top: 28px; min-width: 130px; }
+    .toast { position: fixed; right: 22px; bottom: 22px; z-index: 30; transform: translateY(18px); opacity: 0; pointer-events: none; padding: 11px 14px; border: 1px solid rgba(131,213,162,.35); border-radius: 8px; color: #def2e5; background: #14231a; box-shadow: var(--shadow); font-size: 12px; transition: .22s ease; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 920px) {
+      .topbar { padding: 0 16px; gap: 14px; }
+      .nav { margin-left: 0; }
+      .top-stats { gap: 10px; }
+      .stat:nth-child(3) { display: none; }
+      main { padding: 16px; }
+      .learn-grid { grid-template-columns: 1fr; }
+      .lesson-panel { min-height: auto; }
+      .terminal-card { min-height: 650px; }
+      .terminal-window { min-height: 500px; }
+      .practice-shell { grid-template-columns: 1fr; }
+      .practice-info { min-height: auto; }
+      .practice-terminal { min-height: 610px; }
+    }
+    @media (max-width: 620px) {
+      .topbar { height: auto; min-height: 62px; flex-wrap: wrap; padding: 11px 13px; }
+      .brand-subtitle { display: none; }
+      .topbar-spacer { display: none; }
+      .top-stats { margin-left: auto; }
+      .nav { order: 3; width: 100%; border-top: 1px solid var(--line); padding-top: 8px; }
+      .nav button { flex: 1; }
+      .lesson-panel { padding: 20px; }
+      .terminal-head { padding: 0 13px; }
+      .terminal-window { min-height: 460px; padding: 14px 13px; }
+      .terminal-foot { padding: 0 13px; gap: 9px; overflow: auto; white-space: nowrap; }
+      .library-shell { padding: 20px; }
+      .library-header { display: block; }
+      .search-box { margin-top: 18px; width: 100%; }
+      .library-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="brand" id="brandButton" aria-label="Go to current lesson">
+        <span class="brand-mark">&gt;_</span>
+        <span><span class="brand-title">Terminal Quest</span><span class="brand-subtitle">learn by using the terminal</span></span>
+      </button>
+      <nav class="nav" aria-label="Primary navigation">
+        <button class="active" data-view="learn">Learn</button>
+        <button data-view="practice">Practice</button>
+        <button data-view="commands">Commands</button>
+      </nav>
+      <span class="topbar-spacer"></span>
+      <div class="top-stats" aria-label="Progress statistics">
+        <div class="stat"><span class="stat-label">Level</span><span class="stat-value" id="topLevel">01</span></div>
+        <div class="stat"><span class="stat-label">XP</span><span class="stat-value" id="topXp">0</span></div>
+        <div class="stat"><span class="stat-label">Streak</span><span class="stat-value" id="topStreak">0d</span></div>
+        <button class="text-button reset-link" id="resetProgress">Reset</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="view active" id="learnView">
+        <div class="learn-grid">
+          <aside class="lesson-panel panel" aria-label="Lesson panel">
+            <div class="eyebrow">LEVEL <span id="lessonLevel">01</span> <span id="lessonBossLabel"></span></div>
+            <h1 class="lesson-title" id="lessonTitle">Where am I?</h1>
+            <p class="lesson-explanation" id="lessonExplanation"></p>
+            <div class="platforms" id="lessonPlatforms"></div>
+            <div class="section-label">Learn</div>
+            <div class="example" id="lessonExample"></div>
+            <div class="section-label">Challenge</div>
+            <div class="objective" id="lessonObjective"><strong>Objective</strong><span id="lessonObjectiveText"></span></div>
+            <div class="hint-box" id="hintBox"><strong id="hintLabel">Hint</strong><span id="hintText"></span></div>
+            <div class="feedback" id="challengeFeedback"><div class="feedback-title" id="feedbackTitle"></div><div class="feedback-detail" id="feedbackDetail"></div></div>
+            <div class="lesson-spacer"></div>
+            <div class="lesson-actions">
+              <button class="secondary-button" id="hintButton">Hint</button>
+              <button class="ghost-button" id="revealButton">Reveal answer</button>
+              <button class="ghost-button" id="resetChallenge">Reset</button>
+              <button class="primary-button" id="checkChallenge">Check challenge</button>
+              <button class="primary-button" id="continueChallenge" hidden>Continue →</button>
+            </div>
+            <div class="level-progress">
+              <div class="progress-line"><span id="challengeProgressText">0 / 0 challenges</span><span id="challengeProgressPercent">0%</span></div>
+              <div class="progress-track"><span id="challengeProgressBar" style="width:0%"></span></div>
+              <div class="level-nav" id="levelNav" aria-label="Levels"></div>
+            </div>
+          </aside>
+
+          <section class="terminal-card" aria-label="Lesson terminal">
+            <div class="terminal-head"><div class="traffic"><i></i><i></i><i></i></div><span class="terminal-title">terminal — simulated session</span><span class="terminal-head-spacer"></span><span class="scenario-state" id="scenarioState">LOCAL</span></div>
+            <div class="terminal-window" id="lessonTerminalWindow">
+              <div class="terminal-output" id="lessonOutput" aria-live="polite"></div>
+              <div class="terminal-input-row"><span class="terminal-prompt" id="lessonPrompt"></span><input class="terminal-input" id="lessonInput" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Terminal input"></div>
+            </div>
+            <div class="terminal-foot"><span class="key"><kbd>Enter</kbd> run</span><span class="key"><kbd>↑</kbd><kbd>↓</kbd> history</span><span class="key"><kbd>Tab</kbd> complete</span><span class="key"><kbd>Ctrl</kbd><kbd>L</kbd> clear</span></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="practiceView">
+        <div class="practice-shell">
+          <aside class="practice-info panel">
+            <div class="eyebrow">SANDBOX <span>FREE PLAY</span></div>
+            <h1>Practice</h1>
+            <p>Experiment without an objective. This filesystem is disposable; your real computer is not involved.</p>
+            <div class="practice-note"><strong>Start somewhere</strong><span>Try <code>pwd</code>, <code>ls</code>, then make your own little project inside <code>~/sandbox</code>.</span></div>
+            <div class="lesson-actions"><button class="secondary-button" id="resetPractice">Reset sandbox</button></div>
+          </aside>
+          <section class="terminal-card practice-terminal" aria-label="Practice terminal">
+            <div class="terminal-head"><div class="traffic"><i></i><i></i><i></i></div><span class="terminal-title">terminal — practice sandbox</span><span class="terminal-head-spacer"></span><span class="scenario-state">SANDBOX</span></div>
+            <div class="terminal-window"><div class="terminal-output" id="practiceOutput" aria-live="polite"></div><div class="terminal-input-row"><span class="terminal-prompt" id="practicePrompt"></span><input class="terminal-input" id="practiceInput" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Practice terminal input"></div></div>
+            <div class="terminal-foot"><span class="key"><kbd>Enter</kbd> run</span><span class="key"><kbd>↑</kbd><kbd>↓</kbd> history</span><span class="key"><kbd>Tab</kbd> complete</span><span class="key"><kbd>Ctrl</kbd><kbd>L</kbd> clear</span></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="commandsView">
+        <div class="library-shell">
+          <div class="library-header"><div><div class="eyebrow">REFERENCE <span>QUICK LOOKUP</span></div><h1>Command library</h1><p>Una referencia breve para recordar qué herramienta buscar, no un manual interminable.</p></div><input class="search-box" id="commandSearch" type="search" placeholder="Search commands..." aria-label="Search commands"></div>
+          <div class="library-filter" id="commandFilters"></div>
+          <div class="library-grid" id="commandGrid"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="onboardingModal">
+    <div class="onboarding">
+      <div class="brand-mark">&gt;_</div>
+      <h1>Terminal Quest</h1>
+      <p>Learn the terminal by using the terminal.</p>
+      <div class="platforms"><span class="platform-badge mac">macOS</span><span class="platform-badge linux">Linux</span></div>
+      <button class="primary-button" id="startButton">Start</button>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      // The app is intentionally self-contained. These layers keep the single file maintainable.
+      // VirtualFileSystem, TerminalEngine, CommandRegistry, ChallengeEngine, GameState and UI live below.
+      const APP_VERSION = "1.0.0";
+      const STORAGE_KEY = "terminal-quest-state-v1";
+      const HOME = "/home/bruno";
+      const today = () => { const date = new Date(); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; };
+      const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+      const escapeHTML = (value) => String(value ?? "").replace(/[&<>\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[char]));
+      const textLines = (value) => String(value ?? "").replace(/\n$/, "").split("\n");
+      const basename = (path) => { const parts = path.split("/").filter(Boolean); return parts[parts.length - 1] || "/"; };
+      const dirname = (path) => { const parts = path.split("/").filter(Boolean); parts.pop(); return "/" + parts.join("/"); };
+      const modeNumber = (mode) => parseInt(String(mode || "644").replace(/[^0-7]/g, "") || "644", 8);
+      const formatBytes = (bytes) => bytes < 1024 ? `${bytes}B` : bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)}K` : `${(bytes / (1024 * 1024)).toFixed(1)}M`;
+      const result = (stdout = "", stderr = "", extra = {}) => ({ stdout, stderr, code: stderr ? 1 : 0, ...extra });
+
+      class VirtualFileSystem {
+        constructor(options = {}) {
+          this.platform = options.platform || "macOS";
+          this.hostname = options.hostname || (this.platform === "Linux" ? "server" : "terminal-mac");
+          this.user = options.user || "bruno";
+          this.home = options.home || `/home/${this.user}`;
+          this.root = this.makeDir("/");
+          this.putDir("/home");
+          this.putDir(this.home);
+          this.putDir(`${this.home}/Desktop`);
+          this.putDir(`${this.home}/Documents`);
+          this.putDir(`${this.home}/Downloads`);
+          this.putDir(`${this.home}/projects`);
+          this.putDir(`${this.home}/sandbox`);
+          this.putDir("/etc");
+          this.putDir("/tmp");
+          this.putDir("/var");
+          this.putDir("/var/log");
+        }
+
+        makeDir(name, mode = "755") { return { type: "dir", name, mode, owner: this.user, group: "staff", children: Object.create(null) }; }
+        makeFile(name, content = "", mode = "644", extra = {}) { return { type: "file", name, content: String(content), mode, owner: this.user, group: "staff", ...extra }; }
+        cloneNode(node) {
+          if (!node) return null;
+          const copy = { ...node };
+          if (node.type === "dir") {
+            copy.children = Object.create(null);
+            Object.keys(node.children).forEach((key) => { copy.children[key] = this.cloneNode(node.children[key]); });
+          }
+          if (node.archiveEntries) copy.archiveEntries = JSON.parse(JSON.stringify(node.archiveEntries));
+          return copy;
+        }
+        normalize(input = ".", cwd = this.home) {
+          let raw = String(input || ".");
+          if (raw === "~") raw = this.home;
+          else if (raw.startsWith("~/")) raw = this.home + raw.slice(1);
+          else if (!raw.startsWith("/")) raw = `${cwd.replace(/\/$/, "")}/${raw}`;
+          const parts = [];
+          raw.split("/").forEach((part) => {
+            if (!part || part === ".") return;
+            if (part === "..") parts.pop();
+            else parts.push(part);
+          });
+          return "/" + parts.join("/");
+        }
+        _node(abs) {
+          if (abs === "/") return this.root;
+          let current = this.root;
+          for (const part of abs.split("/").filter(Boolean)) {
+            if (!current || current.type !== "dir" || !current.children[part]) return null;
+            current = current.children[part];
+          }
+          return current;
+        }
+        get(path, cwd = this.home) { return this._node(this.normalize(path, cwd)); }
+        getAbs(abs) { return this._node(this.normalize(abs, "/")); }
+        exists(path, cwd = this.home) { return !!this.get(path, cwd); }
+        isDir(path, cwd = this.home) { const node = this.get(path, cwd); return !!node && node.type === "dir"; }
+        parentFor(path, cwd = this.home) {
+          const abs = this.normalize(path, cwd);
+          if (abs === "/") return { abs, parent: null, name: "/" };
+          return { abs, parent: this._node(dirname(abs)), name: basename(abs) };
+        }
+        putDir(path, mode = "755") {
+          const abs = this.normalize(path, "/");
+          if (abs === "/") return this.root;
+          let current = this.root;
+          for (const part of abs.split("/").filter(Boolean)) {
+            if (!current.children[part]) current.children[part] = this.makeDir(part, mode);
+            current = current.children[part];
+            if (current.type !== "dir") throw new Error(`${abs} is not a directory`);
+          }
+          return current;
+        }
+        putFile(path, content = "", mode = "644", extra = {}) {
+          const { parent, name } = this.parentFor(path, "/");
+          if (!parent || parent.type !== "dir") throw new Error(`parent is not a directory for ${path}`);
+          parent.children[name] = this.makeFile(name, content, mode, extra);
+          return parent.children[name];
+        }
+        mkdir(path, cwd, recursive = false) {
+          const abs = this.normalize(path, cwd);
+          if (abs === "/") return { ok: false, error: "File exists" };
+          const parts = abs.split("/").filter(Boolean);
+          let current = this.root;
+          for (let index = 0; index < parts.length; index += 1) {
+            const part = parts[index];
+            if (!current.children[part]) {
+              if (!recursive && index !== parts.length - 1) return { ok: false, error: "No such file or directory" };
+              current.children[part] = this.makeDir(part);
+            } else if (current.children[part].type !== "dir") {
+              return { ok: false, error: "Not a directory" };
+            } else if (!recursive && index === parts.length - 1) {
+              return { ok: false, error: "File exists" };
+            }
+            current = current.children[part];
+          }
+          return { ok: true };
+        }
+        touch(path, cwd) {
+          const { parent, name } = this.parentFor(path, cwd);
+          if (!parent) return { ok: false, error: "Permission denied" };
+          if (parent.type !== "dir") return { ok: false, error: "Not a directory" };
+          if (!parent.children[name]) parent.children[name] = this.makeFile(name);
+          else if (parent.children[name].type === "dir") return { ok: false, error: "Is a directory" };
+          return { ok: true };
+        }
+        write(path, cwd, content, append = false) {
+          const { parent, name } = this.parentFor(path, cwd);
+          if (!parent) return { ok: false, error: "Permission denied" };
+          if (parent.type !== "dir") return { ok: false, error: "Not a directory" };
+          if (parent.children[name] && parent.children[name].type === "dir") return { ok: false, error: "Is a directory" };
+          if (!parent.children[name]) parent.children[name] = this.makeFile(name, content);
+          else parent.children[name].content = append ? parent.children[name].content + content : content;
+          return { ok: true };
+        }
+        remove(path, cwd, recursive = false, force = false) {
+          const record = this.parentFor(path, cwd);
+          const node = this.get(path, cwd);
+          if (!node) return force ? { ok: true } : { ok: false, error: "No such file or directory" };
+          if (record.abs === "/") return { ok: false, error: "Permission denied" };
+          if (node.type === "dir" && !recursive) return { ok: false, error: "Is a directory" };
+          if (node.type === "dir" && Object.keys(node.children).length && !recursive) return { ok: false, error: "Directory not empty" };
+          if (!record.parent || record.parent.type !== "dir") return { ok: false, error: "Permission denied" };
+          delete record.parent.children[record.name];
+          return { ok: true };
+        }
+        rmdir(path, cwd) {
+          const node = this.get(path, cwd);
+          if (!node) return { ok: false, error: "No such file or directory" };
+          if (node.type !== "dir") return { ok: false, error: "Not a directory" };
+          if (Object.keys(node.children).length) return { ok: false, error: "Directory not empty" };
+          const record = this.parentFor(path, cwd);
+          if (!record.parent || record.parent.type !== "dir") return { ok: false, error: "Permission denied" };
+          delete record.parent.children[record.name];
+          return { ok: true };
+        }
+        copy(source, destination, cwd, recursive = false) {
+          const sourceAbs = this.normalize(source, cwd);
+          const sourceNode = this._node(sourceAbs);
+          if (!sourceNode) return { ok: false, error: "No such file or directory" };
+          if (sourceNode.type === "dir" && !recursive) return { ok: false, error: "omitting directory" };
+          let destinationAbs = this.normalize(destination, cwd);
+          const destinationNode = this._node(destinationAbs);
+          if (destinationNode && destinationNode.type === "dir") destinationAbs = `${destinationAbs.replace(/\/$/, "")}/${basename(sourceAbs)}`;
+          const parent = this._node(dirname(destinationAbs));
+          if (!parent) return { ok: false, error: "No such file or directory" };
+          if (parent.type !== "dir") return { ok: false, error: "Not a directory" };
+          const copy = this.cloneNode(sourceNode);
+          copy.name = basename(destinationAbs);
+          parent.children[copy.name] = copy;
+          return { ok: true };
+        }
+        move(source, destination, cwd) {
+          const sourceAbs = this.normalize(source, cwd);
+          const sourceNode = this._node(sourceAbs);
+          if (!sourceNode) return { ok: false, error: "No such file or directory" };
+          let destinationAbs = this.normalize(destination, cwd);
+          const destinationNode = this._node(destinationAbs);
+          if (destinationNode && destinationNode.type === "dir") destinationAbs = `${destinationAbs.replace(/\/$/, "")}/${basename(sourceAbs)}`;
+          const parent = this._node(dirname(destinationAbs));
+          if (!parent) return { ok: false, error: "No such file or directory" };
+          if (parent.type !== "dir") return { ok: false, error: "Not a directory" };
+          const sourceRecord = this.parentFor(sourceAbs, "/");
+          if (sourceRecord.parent === parent && sourceRecord.name === basename(destinationAbs)) return { ok: true };
+          const moved = this.cloneNode(sourceNode);
+          moved.name = basename(destinationAbs);
+          parent.children[moved.name] = moved;
+          delete sourceRecord.parent.children[sourceRecord.name];
+          return { ok: true };
+        }
+        list(path, cwd, all = false) {
+          const abs = this.normalize(path, cwd);
+          const node = this._node(abs);
+          if (!node) return { ok: false, error: "No such file or directory" };
+          if (node.type === "file") return { ok: true, entries: [{ name: basename(abs), node }] };
+          let names = Object.keys(node.children).sort((a, b) => a.localeCompare(b));
+          if (all) names = [".", "..", ...names];
+          return { ok: true, entries: names.map((name) => ({ name, node: name === "." ? node : name === ".." ? this._node(dirname(abs)) || this.root : node.children[name] })) };
+        }
+        read(path, cwd) {
+          const node = this.get(path, cwd);
+          if (!node) return { ok: false, error: "No such file or directory" };
+          if (node.type !== "file") return { ok: false, error: "Is a directory" };
+          return { ok: true, content: node.content };
+        }
+        chmod(path, cwd, mode) {
+          const node = this.get(path, cwd);
+          if (!node) return { ok: false, error: "No such file or directory" };
+          if (node.type === "dir" && mode === "+x") node.mode = "755";
+          else if (mode === "+x") node.mode = String(modeNumber(node.mode) | 0o111).slice(-3);
+          else if (mode === "-x") node.mode = String(modeNumber(node.mode) & 0o666).padStart(3, "0");
+          else if (/^[0-7]{3,4}$/.test(mode)) node.mode = mode.slice(-3);
+          else return { ok: false, error: "invalid mode" };
+          return { ok: true };
+        }
+        size(node) {
+          if (!node) return 0;
+          if (node.type === "file") return node.content.length;
+          return Object.values(node.children).reduce((total, child) => total + this.size(child), 0);
+        }
+        collectFiles(path, cwd, includeDirectories = false) {
+          const abs = this.normalize(path, cwd);
+          const start = this._node(abs);
+          const found = [];
+          if (!start) return found;
+          const visit = (node, nodeAbs) => {
+            if (node.type === "file") found.push({ abs: nodeAbs, node });
+            else {
+              if (includeDirectories) found.push({ abs: nodeAbs, node });
+              Object.keys(node.children).sort().forEach((name) => visit(node.children[name], `${nodeAbs === "/" ? "" : nodeAbs}/${name}`));
+            }
+          };
+          visit(start, abs);
+          return found;
+        }
+        snapshot(path, cwd) {
+          const abs = this.normalize(path, cwd);
+          const node = this._node(abs);
+          if (!node) return null;
+          const rootName = basename(abs);
+          const entries = [];
+          const visit = (current, currentAbs, relative) => {
+            if (current.type === "file") entries.push({ path: relative, type: "file", content: current.content, mode: current.mode });
+            else {
+              entries.push({ path: relative, type: "dir", mode: current.mode });
+              Object.keys(current.children).sort().forEach((name) => visit(current.children[name], `${currentAbs === "/" ? "" : currentAbs}/${name}`, `${relative}/${name}`));
+            }
+          };
+          visit(node, abs, rootName);
+          return entries;
+        }
+        restore(entries, destination, cwd) {
+          const base = this.normalize(destination || ".", cwd);
+          this.putDir(base);
+          entries.filter((entry) => entry.type === "dir").sort((a, b) => a.path.length - b.path.length).forEach((entry) => this.putDir(`${base}/${entry.path}`, entry.mode));
+          entries.filter((entry) => entry.type === "file").forEach((entry) => this.putFile(`${base}/${entry.path}`, entry.content, entry.mode));
+        }
+      }
+
+      function makeBaseScenario(options = {}) {
+        const fs = new VirtualFileSystem(options);
+        fs.putFile(`${fs.home}/welcome.txt`, "Welcome to your virtual terminal.\nYou can experiment safely here.\n");
+        fs.putFile(`${fs.home}/notes.txt`, "Remember: orient yourself before changing anything.\n");
+        fs.putFile(`${fs.home}/projects/README.md`, "# projects\nA safe place to practice.\n");
+        fs.putFile(`${fs.home}/projects/todo.txt`, "learn terminal\npractice pipes\nreview permissions\n");
+        fs.putFile(`${fs.home}/.profile`, "export EDITOR=vim\n");
+        const processes = options.processes || defaultProcesses(options.platform === "Linux" ? "linux" : "mac");
+        return { fs, cwd: options.cwd || fs.home, processes, env: { EDITOR: "vim", LANG: "en_US.UTF-8" }, remoteFactory: options.remoteFactory || null };
+      }
+      function makePracticeScenario() {
+        const scenario = makeBaseScenario();
+        scenario.cwd = `${scenario.fs.home}/sandbox`;
+        scenario.fs.putFile(`${scenario.fs.home}/sandbox/README.txt`, "Practice is disposable.\n");
+        return scenario;
+      }
+      function makeRemoteScenario(host = "raspberrypi", user = "bruno", options = {}) {
+        const fs = new VirtualFileSystem({ platform: "Linux", hostname: host, user, home: `/home/${user}` });
+        fs.putDir("/home/bruno");
+        fs.putDir("/var/www");
+        fs.putFile("/var/www/index.html", "<h1>server</h1>\n");
+        fs.putFile("/var/log/system.log", "INFO boot complete\nINFO ssh ready\n");
+        fs.putFile("/var/log/server.log", "INFO listening on :8080\nERROR database timeout\nINFO retry scheduled\nERROR database timeout\n");
+        fs.putFile("/var/log/auth.log", "INFO accepted publickey for bruno\n");
+        fs.putFile(`/home/${user}/README.txt`, "Remote Linux shell.\n");
+        return { fs, cwd: options.cwd || `/home/${user}`, processes: options.processes || defaultProcesses("server"), env: { LANG: "C.UTF-8" } };
+      }
+      function defaultProcesses(kind = "mac") {
+        if (kind === "server") return [
+          { pid: 1, user: "root", cpu: "0.0", mem: "0.1", command: "systemd" },
+          { pid: 742, user: "root", cpu: "0.3", mem: "1.2", command: "sshd" },
+          { pid: 2451, user: "bruno", cpu: "72.4", mem: "8.1", command: "node server.js" },
+          { pid: 2490, user: "bruno", cpu: "1.2", mem: "0.8", command: "tail -f server.log" }
+        ];
+        if (kind === "linux") return [
+          { pid: 1, user: "root", cpu: "0.0", mem: "0.1", command: "systemd" },
+          { pid: 612, user: "root", cpu: "0.2", mem: "0.7", command: "sshd" },
+          { pid: 931, user: "bruno", cpu: "1.4", mem: "1.3", command: "bash" }
+        ];
+        return [
+          { pid: 1, user: "root", cpu: "0.0", mem: "0.1", command: "launchd" },
+          { pid: 412, user: "bruno", cpu: "2.0", mem: "1.1", command: "zsh" },
+          { pid: 840, user: "bruno", cpu: "0.4", mem: "3.2", command: "Terminal Quest" }
+        ];
+      }
+
+      function tokenize(line) {
+        const tokens = [];
+        let value = "";
+        let quote = null;
+        let escaped = false;
+        let sawSingle = false;
+        const flush = () => { if (value !== "" || tokens.length === 0 || sawSingle) tokens.push({ value, expand: !sawSingle }); value = ""; sawSingle = false; };
+        for (let index = 0; index < line.length; index += 1) {
+          const char = line[index];
+          if (escaped) { value += char; escaped = false; continue; }
+          if (char === "\\" && quote !== "'") { escaped = true; continue; }
+          if (quote) {
+            if (char === quote) quote = null;
+            else { value += char; if (quote === "'") sawSingle = true; }
+            continue;
+          }
+          if (char === "'" || char === '"') { quote = char; if (char === "'") sawSingle = true; continue; }
+          if (/\s/.test(char)) { if (value !== "" || sawSingle) flush(); continue; }
+          if (char === "|" || char === ">") {
+            if (value !== "" || sawSingle) flush();
+            if (char === ">" && line[index + 1] === ">") { tokens.push({ value: ">>", expand: false }); index += 1; }
+            else tokens.push({ value: char, expand: false });
+            continue;
+          }
+          value += char;
+        }
+        if (escaped) value += "\\";
+        if (quote) return { error: "unexpected end of file while looking for matching quote" };
+        if (value !== "" || sawSingle) flush();
+        return { tokens };
+      }
+      function parseShell(line) {
+        const tokenized = tokenize(line);
+        if (tokenized.error) return tokenized;
+        const commands = [];
+        let current = { tokens: [], redirect: null };
+        const finish = () => { if (current.tokens.length) commands.push(current); current = { tokens: [], redirect: null }; };
+        for (let index = 0; index < tokenized.tokens.length; index += 1) {
+          const token = tokenized.tokens[index];
+          if (token.value === "|") {
+            if (!current.tokens.length) return { error: "syntax error near unexpected token `|'" };
+            finish();
+          } else if (token.value === ">" || token.value === ">>") {
+            const target = tokenized.tokens[index + 1];
+            if (!target || ["|", ">", ">>"].includes(target.value)) return { error: "syntax error near unexpected token `newline'" };
+            current.redirect = { append: token.value === ">>", target };
+            index += 1;
+          } else current.tokens.push(token);
+        }
+        finish();
+        return { commands };
+      }
+      function expandVariables(value, env) {
+        return String(value).replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, brace, plain) => env[brace || plain] ?? "");
+      }
+      function flagSet(args) {
+        const flags = new Set();
+        const rest = [];
+        args.forEach((arg) => {
+          if (arg === "--") return;
+          if (/^-[^-].+/.test(arg)) arg.slice(1).split("").forEach((flag) => flags.add(flag));
+          else if (/^-[^-]$/.test(arg)) flags.add(arg.slice(1));
+          else rest.push(arg);
+        });
+        return { flags, rest };
+      }
+      function wildcardMatch(pattern, value) {
+        const regex = "^" + String(pattern).replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".") + "$";
+        return new RegExp(regex, "i").test(value);
+      }
+
+      const COMMANDS = Object.create(null);
+      const registerCommand = (name, definition) => { COMMANDS[name] = { name, category: "Shell", platforms: ["macOS + Linux"], examples: [], options: [], ...definition }; };
+      const commandError = (name, message) => result("", `${name}: ${message}\n`);
+      const readOne = (ctx, path) => ctx.fs.read(path, ctx.cwd);
+      const readSources = (ctx, args, stdin = "") => {
+        if (!args.length) return { ok: true, content: stdin, names: [] };
+        let content = "";
+        const names = [];
+        for (const path of args) {
+          const read = readOne(ctx, path);
+          if (!read.ok) return { ok: false, error: `${path}: ${read.error}` };
+          content += read.content;
+          names.push(path);
+        }
+        return { ok: true, content, names };
+      };
+      const modeString = (node) => `${node.type === "dir" ? "d" : "-"}${modeNumber(node.mode) & 0o400 ? "r" : "-"}${modeNumber(node.mode) & 0o200 ? "w" : "-"}${modeNumber(node.mode) & 0o100 ? "x" : "-"}${modeNumber(node.mode) & 0o040 ? "r" : "-"}${modeNumber(node.mode) & 0o020 ? "w" : "-"}${modeNumber(node.mode) & 0o010 ? "x" : "-"}${modeNumber(node.mode) & 0o004 ? "r" : "-"}${modeNumber(node.mode) & 0o002 ? "w" : "-"}${modeNumber(node.mode) & 0o001 ? "x" : "-"}`;
+      const ctxPath = (ctx, path) => ctx.fs.normalize(path, ctx.cwd);
+
+      class TerminalEngine {
+        constructor(scenario = makeBaseScenario()) {
+          this.fs = scenario.fs;
+          this.localFs = scenario.fs;
+          this.cwd = scenario.cwd || this.fs.home;
+          this.localCwd = this.cwd;
+          this.remoteFactory = scenario.remoteFactory;
+          this.remoteHost = null;
+          this.remoteUser = null;
+          this.remoteSessions = Object.create(null);
+          this.processes = scenario.processes || defaultProcesses();
+          this.baseEnv = { USER: this.fs.user, HOME: this.fs.home, PATH: "/usr/local/bin:/usr/bin:/bin", SHELL: this.fs.platform === "Linux" ? "/bin/bash" : "/bin/zsh", ...scenario.env };
+          this.clipboard = "";
+          this.history = [];
+          this.historyIndex = 0;
+          this.lastExecution = result();
+        }
+        get platform() { return this.fs.platform; }
+        get user() { return this.remoteUser || this.localFs.user; }
+        get env() { return { ...this.baseEnv, USER: this.user, HOME: this.fs.home, HOSTNAME: this.fs.hostname, OSTYPE: this.fs.platform === "Linux" ? "linux-gnu" : "darwin" }; }
+        get prompt() {
+          const home = this.fs.home;
+          let display = this.cwd === home ? "~" : this.cwd.startsWith(`${home}/`) ? `~${this.cwd.slice(home.length)}` : this.cwd;
+          return `${this.user}@${this.fs.hostname}:${display} $`;
+        }
+        makeRemoteSession(host, user) {
+          if (!this.remoteSessions[host]) {
+            const scenario = this.remoteFactory ? this.remoteFactory(host, user) : makeRemoteScenario(host, user);
+            this.remoteSessions[host] = { fs: scenario.fs, cwd: scenario.cwd || scenario.fs.home, processes: scenario.processes || defaultProcesses("server"), env: scenario.env || {} };
+          }
+          return this.remoteSessions[host];
+        }
+        connectRemote(user, host) {
+          if (this.remoteHost) return { ok: false, error: "Already connected. Use exit first." };
+          this.localFs = this.fs;
+          this.localCwd = this.cwd;
+          const session = this.makeRemoteSession(host, user);
+          this.fs = session.fs;
+          this.cwd = session.cwd;
+          this.processes = session.processes;
+          this.remoteHost = host;
+          this.remoteUser = user;
+          return { ok: true };
+        }
+        disconnectRemote() {
+          if (!this.remoteHost) return { ok: false, error: "Not connected to a remote host." };
+          const session = this.remoteSessions[this.remoteHost];
+          session.cwd = this.cwd;
+          session.processes = this.processes;
+          this.fs = this.localFs;
+          this.cwd = this.localCwd;
+          this.remoteHost = null;
+          this.remoteUser = null;
+          this.processes = defaultProcesses(this.fs.platform === "Linux" ? "linux" : "mac");
+          return { ok: true };
+        }
+        context(stdin = "") { return { engine: this, fs: this.fs, cwd: this.cwd, stdin, env: this.env, remote: !!this.remoteHost, platform: this.platform }; }
+        executeLine(line) {
+          const raw = String(line || "").trim();
+          if (!raw) return result();
+          this.history.push(raw);
+          this.historyIndex = this.history.length;
+          const parsed = parseShell(raw);
+          if (parsed.error) { this.lastExecution = commandError("shell", parsed.error); return this.lastExecution; }
+          let stdin = "";
+          let stdout = "";
+          let stderr = "";
+          let clear = false;
+          for (let index = 0; index < parsed.commands.length; index += 1) {
+            const command = parsed.commands[index];
+            const tokens = command.tokens;
+            if (!tokens.length) continue;
+            const name = tokens[0].expand ? expandVariables(tokens[0].value, this.env) : tokens[0].value;
+            const args = tokens.slice(1).map((token) => token.expand ? expandVariables(token.value, this.env) : token.value);
+            const entry = COMMANDS[name];
+            let commandResult;
+            if (!entry) commandResult = commandError(name, `command not found: ${name}`);
+            else commandResult = entry.execute(args, this.context(stdin));
+            stdout = commandResult.stdout || "";
+            stderr += commandResult.stderr || "";
+            clear = clear || !!commandResult.clear;
+            if (command.redirect && stdout) {
+              const target = command.redirect.target.expand ? expandVariables(command.redirect.target.value, this.env) : command.redirect.target.value;
+              const written = this.fs.write(target, this.cwd, stdout, command.redirect.append);
+              if (!written.ok) stderr += `${target}: ${written.error}\n`;
+              stdout = "";
+            }
+            stdin = stdout;
+          }
+          this.lastExecution = result(stdout, stderr, { clear });
+          return this.lastExecution;
+        }
+        autocomplete(line) {
+          const raw = String(line || "");
+          const match = raw.match(/(?:^|\s)([^\s]*)$/);
+          if (!match) return { value: raw, suggestions: [] };
+          const token = match[1];
+          const start = raw.length - token.length;
+          const before = raw.slice(0, start);
+          const firstWord = raw.trim().split(/\s+/)[0] || "";
+          if (!before.trim() && !token.includes("/") && !token.startsWith("~")) {
+            const names = Object.keys(COMMANDS).filter((name) => name.startsWith(token)).sort();
+            return { value: names.length === 1 ? raw.slice(0, start) + names[0] : raw, suggestions: names };
+          }
+          if (!["cd", "ls", "cat", "touch", "rm", "cp", "mv", "find", "head", "tail", "less", "chmod", "rmdir", "du", "tar", "zip", "unzip", "grep"].includes(firstWord)) return { value: raw, suggestions: [] };
+          const slash = token.lastIndexOf("/");
+          const dirToken = slash >= 0 ? token.slice(0, slash + 1) : "";
+          const prefix = slash >= 0 ? token.slice(slash + 1) : token;
+          const dirPath = dirToken || ".";
+          const listing = this.fs.list(dirPath, this.cwd);
+          if (!listing.ok) return { value: raw, suggestions: [] };
+          const names = listing.entries.filter((entry) => entry.name !== "." && entry.name !== ".." && entry.name.startsWith(prefix)).map((entry) => entry.name + (entry.node.type === "dir" ? "/" : ""));
+          const values = names.map((name) => raw.slice(0, start) + dirToken + name);
+          return { value: values.length === 1 ? values[0] : raw, suggestions: values };
+        }
+      }
+
+      function formatList(entries, longFormat) {
+        if (!longFormat) return entries.map((entry) => entry.name).join("\n") + (entries.length ? "\n" : "");
+        const total = entries.reduce((sum, entry) => sum + (entry.node.type === "file" ? entry.node.content.length : 0), 0);
+        const lines = [`total ${Math.max(1, Math.ceil(total / 512))}`];
+        entries.forEach((entry) => {
+          const node = entry.node;
+          const size = node.type === "file" ? node.content.length : Object.keys(node.children).length;
+          lines.push(`${modeString(node)}  ${node.owner}  ${node.group}  ${String(size).padStart(5, " ")}  ${entry.name}`);
+        });
+        return lines.join("\n") + "\n";
+      }
+      function parseCountArgs(args) {
+        let count = 10;
+        const files = [];
+        for (let index = 0; index < args.length; index += 1) {
+          if (args[index] === "-n") count = Number(args[++index]) || 10;
+          else if (/^-n\d+$/.test(args[index])) count = Number(args[index].slice(2));
+          else files.push(args[index]);
+        }
+        return { count, files };
+      }
+      function fileOutput(ctx, args, transform) {
+        const source = readSources(ctx, args, ctx.stdin);
+        if (!source.ok) return commandError("file", source.error);
+        return result(transform(source.content));
+      }
+      function outputPathForFind(abs, startToken, startAbs) {
+        if (startToken.startsWith("/")) return abs;
+        if (startToken === ".") return abs === startAbs ? "." : `.${abs.slice(startAbs.length)}`;
+        return abs === startAbs ? startToken : `${startToken.replace(/\/$/, "")}${abs.slice(startAbs.length)}`;
+      }
+      function processTable(processes, compact = false) {
+        const rows = processes.filter((process) => !process.killed);
+        const header = compact ? "  PID TTY           TIME CMD" : "USER       PID  %CPU %MEM COMMAND";
+        const body = rows.map((process) => compact
+          ? `${String(process.pid).padStart(5, " ")} ttys001    00:00 ${process.command}`
+          : `${process.user.padEnd(8, " ")} ${String(process.pid).padStart(5, " ")} ${String(process.cpu).padStart(5, " ")} ${String(process.mem).padStart(4, " ")} ${process.command}`);
+        return [header, ...body].join("\n") + "\n";
+      }
+
+      registerCommand("pwd", {
+        category: "Navigation", description: "Print the directory you are currently in.", examples: ["pwd"], help: "pwd\n\nPrint the absolute path of the current working directory."
+        , execute: (_args, ctx) => result(`${ctx.cwd}\n`)
+      });
+      registerCommand("ls", {
+        category: "Navigation", description: "List files and directories.", examples: ["ls", "ls -la"], options: ["-l long format", "-a include hidden entries"], help: "ls [options] [path]\n\nList the contents of a directory. -a includes names beginning with a dot; -l adds metadata.",
+        execute: (args, ctx) => {
+          const { flags, rest } = flagSet(args);
+          const targets = rest.length ? rest : ["."];
+            let output = "";
+            let stderr = "";
+            targets.forEach((target, index) => {
+              const listing = ctx.fs.list(target, ctx.cwd);
+              if (!listing.ok) { stderr += `ls: ${target}: ${listing.error}\n`; return; }
+              if (targets.length > 1) output += `${target}:\n`;
+              output += formatList(listing.entries, flags.has("l"));
+              if (targets.length > 1 && index < targets.length - 1) output += "\n";
+            });
+            return result(output, stderr);
+        }
+      });
+      registerCommand("clear", {
+        category: "Shell", description: "Clear the simulated terminal screen.", examples: ["clear"], help: "clear\n\nClear the visible terminal transcript. Ctrl-L does the same thing.",
+        execute: () => result("", "", { clear: true })
+      });
+      registerCommand("whoami", {
+        category: "System", description: "Print the current username.", examples: ["whoami"], help: "whoami\n\nPrint the effective user for this simulated session.",
+        execute: (_args, ctx) => result(`${ctx.engine.user}\n`)
+      });
+      registerCommand("cd", {
+        category: "Navigation", description: "Change the current working directory.", examples: ["cd projects", "cd ..", "cd ~"], options: [".. parent directory", "~ home directory", "/ filesystem root"], help: "cd [directory]\n\nMove through the virtual filesystem. Paths may be relative or absolute.",
+        execute: (args, ctx) => {
+          const target = args[0] || "~";
+          const node = ctx.fs.get(target, ctx.cwd);
+          if (!node) return commandError("cd", `no such file or directory: ${target}`);
+          if (node.type !== "dir") return commandError("cd", `not a directory: ${target}`);
+          ctx.engine.cwd = ctx.fs.normalize(target, ctx.cwd);
+          return result();
+        }
+      });
+      registerCommand("mkdir", {
+        category: "Files", description: "Create one or more directories.", examples: ["mkdir projects", "mkdir -p src/components"], options: ["-p create parents as needed"], help: "mkdir [-p] directory...\n\nCreate directories. -p also creates missing parent directories.",
+        execute: (args, ctx) => {
+          const { flags, rest } = flagSet(args);
+          if (!rest.length) return commandError("mkdir", "missing operand");
+          let stderr = "";
+          rest.forEach((path) => { const made = ctx.fs.mkdir(path, ctx.cwd, flags.has("p")); if (!made.ok) stderr += `mkdir: cannot create directory '${path}': ${made.error}\n`; });
+          return result("", stderr);
+        }
+      });
+      registerCommand("rmdir", {
+        category: "Files", description: "Remove empty directories.", examples: ["rmdir old-folder"], help: "rmdir directory...\n\nRemove directories only when they are empty.",
+        execute: (args, ctx) => {
+          if (!args.length) return commandError("rmdir", "missing operand");
+          let stderr = "";
+          args.forEach((path) => { const removed = ctx.fs.rmdir(path, ctx.cwd); if (!removed.ok) stderr += `rmdir: failed to remove '${path}': ${removed.error}\n`; });
+          return result("", stderr);
+        }
+      });
+      registerCommand("touch", {
+        category: "Files", description: "Create an empty file if it does not exist.", examples: ["touch README.md"], help: "touch file...\n\nCreate empty files. In this simulation, timestamps are not modeled.",
+        execute: (args, ctx) => {
+          if (!args.length) return commandError("touch", "missing file operand");
+          let stderr = "";
+          args.forEach((path) => { const made = ctx.fs.touch(path, ctx.cwd); if (!made.ok) stderr += `touch: ${path}: ${made.error}\n`; });
+          return result("", stderr);
+        }
+      });
+      registerCommand("cp", {
+        category: "Files", description: "Copy files or directories.", examples: ["cp notes.txt notes-copy.txt", "cp -r src backup"], options: ["-r copy directories recursively"], help: "cp [-r] source destination\n\nCopy a file, or a directory when -r is supplied.",
+        execute: (args, ctx) => {
+          const { flags, rest } = flagSet(args);
+          if (rest.length < 2) return commandError("cp", "missing destination file operand");
+          const destination = rest[rest.length - 1];
+          let stderr = "";
+          rest.slice(0, -1).forEach((source) => { const copied = ctx.fs.copy(source, destination, ctx.cwd, flags.has("r")); if (!copied.ok) stderr += `cp: ${source}: ${copied.error}\n`; });
+          return result("", stderr);
+        }
+      });
+      registerCommand("mv", {
+        category: "Files", description: "Move or rename files and directories.", examples: ["mv draft.txt final.txt", "mv folder ~/projects"], help: "mv source destination\n\nMove or rename a filesystem entry.",
+        execute: (args, ctx) => {
+          if (args.length < 2) return commandError("mv", "missing destination file operand");
+          const destination = args[args.length - 1];
+          let stderr = "";
+          args.slice(0, -1).forEach((source) => { const moved = ctx.fs.move(source, destination, ctx.cwd); if (!moved.ok) stderr += `mv: ${source}: ${moved.error}\n`; });
+          return result("", stderr);
+        }
+      });
+      registerCommand("rm", {
+        category: "Files", description: "Remove files; recursive removal is simulated safely.", examples: ["rm old.txt", "rm -r build"], options: ["-r recursive", "-f ignore missing entries"], help: "rm [-rf] path...\n\nRemove entries. There is no traditional trash can in Unix; this game keeps the damage virtual.",
+        execute: (args, ctx) => {
+          const { flags, rest } = flagSet(args);
+          if (!rest.length) return commandError("rm", "missing operand");
+          let stderr = "";
+          let warning = flags.has("r") && flags.has("f") ? "warning: rm -rf is powerful; here it only affects this virtual filesystem.\n" : "";
+          rest.forEach((path) => { const removed = ctx.fs.remove(path, ctx.cwd, flags.has("r"), flags.has("f")); if (!removed.ok) stderr += `rm: ${path}: ${removed.error}\n`; });
+          return result(warning, stderr);
+        }
+      });
+      registerCommand("cat", {
+        category: "Text", description: "Print file contents.", examples: ["cat README.md", "cat users.txt | grep admin"], options: ["-n number output lines"], help: "cat [-n] [file...]\n\nRead files from top to bottom. With no file, pass stdin through.",
+        execute: (args, ctx) => {
+          const { flags, rest } = flagSet(args);
+          const source = readSources(ctx, rest, ctx.stdin);
+          if (!source.ok) return commandError("cat", source.error);
+          let content = source.content;
+          if (flags.has("n")) content = textLines(content).map((line, index) => `${String(index + 1).padStart(6, " ")}  ${line}`).join("\n") + (content.endsWith("\n") ? "\n" : "");
+          return result(content);
+        }
+      });
+      registerCommand("head", {
+        category: "Text", description: "Show the beginning of a file.", examples: ["head -n 3 server.log"], options: ["-n number of lines"], help: "head [-n number] [file]\n\nPrint the first lines of a file.",
+        execute: (args, ctx) => { const parsed = parseCountArgs(args); return fileOutput(ctx, parsed.files, (content) => textLines(content).slice(0, parsed.count).join("\n") + "\n"); }
+      });
+      registerCommand("tail", {
+        category: "Text", description: "Show the end of a file.", examples: ["tail -n 2 server.log"], options: ["-n number of lines"], help: "tail [-n number] [file]\n\nPrint the last lines of a file.",
+        execute: (args, ctx) => { const parsed = parseCountArgs(args); return fileOutput(ctx, parsed.files, (content) => textLines(content).slice(-parsed.count).join("\n") + "\n"); }
+      });
+      registerCommand("less", {
+        category: "Text", description: "Inspect a file page by page (simulated as a readable view).", examples: ["less README.md"], help: "less file\n\nThis educational terminal prints the file and marks the end of the view; a real pager would wait for navigation.",
+        execute: (args, ctx) => { if (!args.length) return commandError("less", "missing file operand"); const source = readOne(ctx, args[0]); return source.ok ? result(`[less] ${args[0]}\n${source.content}[end]\n`) : commandError("less", `${args[0]}: ${source.error}`); }
+      });
+      registerCommand("echo", {
+        category: "Shell", description: "Print text or environment variables.", examples: ["echo hello", "echo $HOME > home.txt"], options: ["-n omit the final newline"], help: "echo [-n] text...\n\nPrint arguments. Variables such as $HOME are expanded before execution.",
+        execute: (args) => { const noNewline = args[0] === "-n"; const values = noNewline ? args.slice(1) : args; return result(values.join(" ") + (noNewline ? "" : "\n")); }
+      });
+      registerCommand("grep", {
+        category: "Search", description: "Search text for a pattern.", examples: ["grep ERROR server.log", "grep -ir admin logs/"], options: ["-i ignore case", "-r recursive", "-n line numbers"], help: "grep [-irn] pattern [file...]\n\nSearch lines for a pattern. Use -r to descend through directories and -i to ignore case.",
+        execute: (args, ctx) => {
+          const { flags, rest } = flagSet(args);
+          if (!rest.length) return commandError("grep", "missing search pattern");
+          const pattern = rest.shift();
+          let matcher;
+          try { matcher = new RegExp(pattern, flags.has("i") ? "i" : ""); } catch (_error) { matcher = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), flags.has("i") ? "i" : ""); }
+          const targets = rest.length ? rest : [];
+          const records = [];
+          if (!targets.length) records.push({ name: "", content: ctx.stdin });
+          targets.forEach((target) => {
+            const node = ctx.fs.get(target, ctx.cwd);
+            if (!node) records.push({ error: `${target}: No such file or directory` });
+            else if (node.type === "dir" && !flags.has("r")) records.push({ error: `${target}: Is a directory` });
+            else if (node.type === "dir") ctx.fs.collectFiles(target, ctx.cwd).forEach((entry) => records.push({ name: outputPathForFind(entry.abs, target, ctx.fs.normalize(target, ctx.cwd)), content: entry.node.content }));
+            else records.push({ name: target, content: node.content });
+          });
+          const multiple = records.filter((record) => !record.error).length > 1;
+          let output = "";
+          let errors = "";
+          records.forEach((record) => {
+            if (record.error) { errors += `grep: ${record.error}\n`; return; }
+            textLines(record.content).forEach((line, lineIndex) => {
+              if (!matcher.test(line)) return;
+              const prefix = multiple && record.name ? `${record.name}:` : "";
+              const numbered = flags.has("n") ? `${lineIndex + 1}:` : "";
+              output += `${prefix}${numbered}${line}\n`;
+            });
+          });
+          return result(output, errors);
+        }
+      });
+      registerCommand("find", {
+        category: "Search", description: "Walk a directory tree and filter paths.", examples: ["find . -name '*.txt'"], options: ["-name glob match names", "-type f or d"], help: "find [path] -name pattern\n\nSearch recursively. The common educational form is find . -name '*.log'.",
+        execute: (args, ctx) => {
+          let startToken = ".";
+          let index = 0;
+          if (args[0] && !args[0].startsWith("-")) { startToken = args[0]; index = 1; }
+          let namePattern = null;
+          let type = null;
+          while (index < args.length) {
+            if (args[index] === "-name") namePattern = args[++index];
+            else if (args[index] === "-type") type = args[++index];
+            index += 1;
+          }
+          const startAbs = ctx.fs.normalize(startToken, ctx.cwd);
+          const startNode = ctx.fs.get(startToken, ctx.cwd);
+          if (!startNode) return commandError("find", `${startToken}: No such file or directory`);
+          const entries = ctx.fs.collectFiles(startToken, ctx.cwd, true);
+          const matches = entries.filter((entry) => (!namePattern || wildcardMatch(namePattern, basename(entry.abs))) && (!type || (type === "f" ? entry.node.type === "file" : entry.node.type === "dir")));
+          return result(matches.map((entry) => outputPathForFind(entry.abs, startToken, startAbs)).join("\n") + (matches.length ? "\n" : ""));
+        }
+      });
+      registerCommand("wc", {
+        category: "Text", description: "Count lines, words, or bytes.", examples: ["wc -l server.log", "cat users.txt | wc -l"], options: ["-l lines", "-w words", "-c bytes"], help: "wc [-lwc] [file]\n\nCount properties of stdin or files. With no flag, print lines, words, and bytes.",
+        execute: (args, ctx) => {
+          const { flags, rest } = flagSet(args);
+          const source = readSources(ctx, rest, ctx.stdin);
+          if (!source.ok) return commandError("wc", source.error);
+          const content = source.content;
+          const lines = content ? content.split("\n").filter((line, i, all) => !(i === all.length - 1 && line === "")).length : 0;
+          const words = content.trim() ? content.trim().split(/\s+/).length : 0;
+          const bytes = content.length;
+          const values = flags.has("l") || flags.has("w") || flags.has("c") ? [flags.has("l") ? lines : null, flags.has("w") ? words : null, flags.has("c") ? bytes : null].filter((value) => value !== null) : [lines, words, bytes];
+          return result(values.join(" ") + (rest.length === 1 ? ` ${rest[0]}` : "") + "\n");
+        }
+      });
+      registerCommand("sort", {
+        category: "Text", description: "Sort lines alphabetically or numerically.", examples: ["sort names.txt", "cat names.txt | sort"], options: ["-r reverse order", "-n numeric order"], help: "sort [-rn] [file]\n\nRead lines and emit them in sorted order.",
+        execute: (args, ctx) => { const { flags, rest } = flagSet(args); const source = readSources(ctx, rest, ctx.stdin); if (!source.ok) return commandError("sort", source.error); const lines = textLines(source.content).filter((line, index, all) => !(index === all.length - 1 && line === "")); lines.sort((a, b) => flags.has("n") ? Number(a) - Number(b) : a.localeCompare(b)); if (flags.has("r")) lines.reverse(); return result(lines.join("\n") + (lines.length ? "\n" : "")); }
+      });
+      registerCommand("uniq", {
+        category: "Text", description: "Collapse adjacent duplicate lines.", examples: ["sort users.txt | uniq"], options: ["-c count duplicates"], help: "uniq [-c]\n\nRemove adjacent duplicate lines. Sort first when you want to deduplicate an entire file.",
+        execute: (args, ctx) => { const { flags, rest } = flagSet(args); const source = readSources(ctx, rest, ctx.stdin); if (!source.ok) return commandError("uniq", source.error); const lines = textLines(source.content).filter((line, index, all) => !(index === all.length - 1 && line === "")); const output = []; lines.forEach((line) => { const previous = output[output.length - 1]; if (previous && previous.line === line) previous.count += 1; else output.push({ line, count: 1 }); }); return result(output.map((entry) => flags.has("c") ? `${String(entry.count).padStart(7, " ")} ${entry.line}` : entry.line).join("\n") + (output.length ? "\n" : "")); }
+      });
+      registerCommand("uname", {
+        category: "System", description: "Print the simulated operating system name.", examples: ["uname", "uname -a"], help: "uname [-a]\n\nIdentify the simulated platform. Local sessions use Darwin; remote Linux sessions use Linux.",
+        execute: (args, ctx) => { const name = ctx.platform === "Linux" ? "Linux" : "Darwin"; return result(args.includes("-a") ? `${name} ${ctx.fs.hostname} 24.0.0 ${ctx.engine.user} ${ctx.platform === "Linux" ? "GNU/Linux" : "arm64"}\n` : `${name}\n`); }
+      });
+      registerCommand("hostname", {
+        category: "System", description: "Print the simulated host name.", examples: ["hostname"], help: "hostname\n\nPrint the host identity without making a network request.",
+        execute: (_args, ctx) => result(`${ctx.fs.hostname}\n`)
+      });
+      registerCommand("df", {
+        category: "System", description: "Show simulated filesystem space.", examples: ["df -h"], options: ["-h human-readable sizes"], help: "df [-h]\n\nDisplay a small simulated disk-usage table. It never inspects your real disk.",
+        execute: (args, ctx) => { const human = args.includes("-h"); const used = ctx.fs.size(ctx.fs.root); const format = (value) => human ? formatBytes(value) : String(Math.ceil(value / 512)); return result(`Filesystem      Size  Used Avail Capacity Mounted on\nvirtual         20G  ${format(used)}  19G      4% /\n`); }
+      });
+      registerCommand("du", {
+        category: "System", description: "Estimate simulated directory usage.", examples: ["du -sh projects"], options: ["-s summary", "-h human-readable"], help: "du [-sh] [path]\n\nShow the size of a virtual path.",
+        execute: (args, ctx) => { const { flags, rest } = flagSet(args); const target = rest[0] || "."; const node = ctx.fs.get(target, ctx.cwd); if (!node) return commandError("du", `${target}: No such file or directory`); const value = ctx.fs.size(node); return result(`${flags.has("h") ? formatBytes(value) : Math.ceil(value / 512)}\t${target}\n`); }
+      });
+      registerCommand("free", {
+        category: "System", description: "Show simulated Linux memory usage.", examples: ["free -h"], options: ["-h human-readable"], platforms: ["Linux"], help: "free [-h]\n\nA Linux-oriented command. macOS users commonly use vm_stat or Activity Monitor instead; this game enables free in Linux sessions.",
+        execute: (args, ctx) => ctx.platform !== "Linux" ? commandError("zsh", "command not found: free (try a Linux session)") : result(`              total        used        free      shared  buff/cache   available\nMem:           7.7Gi       2.1Gi       3.8Gi       112Mi       1.8Gi       5.2Gi\nSwap:          2.0Gi          0B       2.0Gi\n`)
+      });
+      registerCommand("uptime", {
+        category: "System", description: "Show simulated system uptime and load.", examples: ["uptime"], help: "uptime\n\nPrint a stable educational snapshot of this virtual host.",
+        execute: (_args, ctx) => result(` 10:42  up 7 days, 03:18, 2 users, load averages: 0.42 0.38 0.31\n`)
+      });
+      registerCommand("ps", {
+        category: "Processes", description: "List simulated processes.", examples: ["ps", "ps aux"], options: ["aux show a wider process table"], help: "ps [aux]\n\nInspect fictional processes. Nothing here represents a process on your computer.",
+        execute: (args, ctx) => result(processTable(ctx.engine.processes, !args.some((arg) => arg.includes("a") || arg.includes("x"))))
+      });
+      registerCommand("top", {
+        category: "Processes", description: "Watch simulated process activity.", examples: ["top"], help: "top\n\nShow a static snapshot of the busiest virtual processes; press Ctrl-L to clear.",
+        execute: (_args, ctx) => result(`Processes: ${ctx.engine.processes.filter((process) => !process.killed).length}\nPID    %CPU  %MEM  COMMAND\n${ctx.engine.processes.filter((process) => !process.killed).sort((a, b) => Number(b.cpu) - Number(a.cpu)).map((process) => `${String(process.pid).padEnd(6)} ${String(process.cpu).padEnd(5)} ${String(process.mem).padEnd(5)} ${process.command}`).join("\n")}\n`)
+      });
+      registerCommand("kill", {
+        category: "Processes", description: "Stop a fictional process by PID.", examples: ["kill 2451"], help: "kill PID\n\nStop a simulated process. PID 1 is protected in this educational environment.",
+        execute: (args, ctx) => { const pid = Number(args[0]); const process = ctx.engine.processes.find((entry) => entry.pid === pid && !entry.killed); if (!process) return commandError("kill", `${args[0] || ""}: No such process`); if (pid === 1) return commandError("kill", "1: Operation not permitted"); process.killed = true; return result(); }
+      });
+      registerCommand("killall", {
+        category: "Processes", description: "Stop fictional processes by name.", examples: ["killall node"], help: "killall name\n\nStop every matching simulated process; use with care in real systems.",
+        execute: (args, ctx) => { const name = args[0]; if (!name) return commandError("killall", "usage: killall name"); const matches = ctx.engine.processes.filter((process) => !process.killed && process.command.includes(name)); if (!matches.length) return commandError("killall", `${name}: no process found`); matches.forEach((process) => { if (process.pid !== 1) process.killed = true; }); return result(); }
+      });
+      registerCommand("chmod", {
+        category: "Permissions", description: "Change a virtual file's permission mode.", examples: ["chmod +x script.sh", "chmod 755 deploy.sh"], options: ["+x add execute permission", "755 owner/group/other mode"], help: "chmod MODE file\n\nPractice r, w and x permissions with symbolic +x or numeric modes such as 755.",
+        execute: (args, ctx) => { if (args.length < 2) return commandError("chmod", "missing operand"); const mode = args[0]; let stderr = ""; args.slice(1).forEach((path) => { const changed = ctx.fs.chmod(path, ctx.cwd, mode); if (!changed.ok) stderr += `chmod: ${path}: ${changed.error}\n`; }); return result("", stderr); }
+      });
+      registerCommand("ping", {
+        category: "Network", description: "Test reachability in a simulated network.", examples: ["ping raspberrypi"], options: ["-c count number of packets"], help: "ping [-c count] host\n\nGenerate fictional responses. No packets leave this browser.",
+        execute: (args) => { const host = args.find((arg) => !arg.startsWith("-")) || "localhost"; const countIndex = args.indexOf("-c"); const count = countIndex >= 0 ? Number(args[countIndex + 1]) || 3 : 3; return result(`PING ${host} (${host}) 56 data bytes\n${Array.from({ length: count }, (_, index) => `64 bytes from ${host}: icmp_seq=${index + 1} ttl=64 time=${(12 + index * 2.1).toFixed(1)} ms`).join("\n")}\n\n--- ${host} ping statistics ---\n${count} packets transmitted, ${count} packets received, 0.0% packet loss\n`); }
+      });
+      registerCommand("curl", {
+        category: "Network", description: "Inspect a simulated HTTP response.", examples: ["curl https://example.com/health"], options: ["-I headers only"], help: "curl [-I] URL\n\nFetch a canned response inside the simulation; it never connects to the internet.",
+        execute: (args) => { const url = args.find((arg) => !arg.startsWith("-")); if (!url) return commandError("curl", "try: curl https://example.com"); if (args.includes("-I")) return result(`HTTP/1.1 200 OK\ncontent-type: application/json\nx-terminal-quest: simulated\n\n`); return result(`{\n  "status": "ok",\n  "source": "${url}",\n  "simulated": true\n}\n`); }
+      });
+      registerCommand("ssh", {
+        category: "Network", description: "Open a simulated remote shell.", examples: ["ssh bruno@raspberrypi"], help: "ssh user@host\n\nConnect to a fictional Linux host. The remote filesystem is separate from your local sandbox.",
+        execute: (args, ctx) => { const spec = args.find((arg) => !arg.startsWith("-")); if (!spec || !spec.includes("@")) return commandError("ssh", "usage: ssh user@host"); const [user, host] = spec.split("@"); const connected = ctx.engine.connectRemote(user, host); return connected.ok ? result(`The authenticity of host '${host}' is simulated.\nConnected to ${host}.\n`) : commandError("ssh", connected.error); }
+      });
+      registerCommand("exit", {
+        category: "Network", description: "Leave a simulated remote shell.", examples: ["exit"], help: "exit\n\nReturn from a remote session to the local terminal.",
+        execute: (_args, ctx) => { const disconnected = ctx.engine.disconnectRemote(); return disconnected.ok ? result("Connection closed.\n") : result("logout\n"); }
+      });
+      function isRemoteSpec(value) { return /^[^:]+@[^:]+:/.test(value); }
+      function remoteParts(spec) { const match = String(spec).match(/^([^@]+)@([^:]+):(.*)$/); return match ? { user: match[1], host: match[2], path: match[3] || "." } : null; }
+      function transfer(sourceFs, sourcePath, sourceCwd, destinationFs, destinationPath, destinationCwd) {
+        const sourceAbs = sourceFs.normalize(sourcePath, sourceCwd);
+        const sourceNode = sourceFs.get(sourcePath, sourceCwd);
+        if (!sourceNode) return { ok: false, error: "No such file or directory" };
+        let destAbs = destinationFs.normalize(destinationPath, destinationCwd);
+        const existing = destinationFs.get(destinationPath, destinationCwd);
+        if (existing && existing.type === "dir") destAbs = `${destAbs.replace(/\/$/, "")}/${basename(sourceAbs)}`;
+        if (sourceNode.type === "dir") {
+          const entries = sourceFs.snapshot(sourcePath, sourceCwd);
+          destinationFs.restore(entries, dirname(destAbs), "/");
+        } else destinationFs.putFile(destAbs, sourceNode.content, sourceNode.mode, sourceNode.archiveEntries ? { archiveEntries: sourceNode.archiveEntries } : {});
+        return { ok: true };
+      }
+      registerCommand("scp", {
+        category: "Network", description: "Copy a file between local and simulated remote hosts.", examples: ["scp report.txt bruno@raspberrypi:~/"], options: ["-r recursive directory copy"], help: "scp source destination\n\nTransfer files to or from a simulated remote host. No network connection is made.",
+        execute: (args, ctx) => {
+          const { flags, rest } = flagSet(args);
+          if (rest.length !== 2) return commandError("scp", "usage: scp source destination");
+          const [source, destination] = rest;
+          const sourceRemote = isRemoteSpec(source);
+          const destinationRemote = isRemoteSpec(destination);
+          if (sourceRemote === destinationRemote) return commandError("scp", "one side must be local and one side remote");
+          const remote = remoteParts(sourceRemote ? source : destination);
+          const session = ctx.engine.makeRemoteSession(remote.host, remote.user);
+          const localFs = ctx.engine.localFs;
+          const localCwd = ctx.engine.localCwd;
+          let copied;
+          if (destinationRemote) copied = transfer(localFs, source, localCwd, session.fs, remote.path, session.cwd);
+          else copied = transfer(session.fs, remote.path, session.cwd, localFs, destination, localCwd);
+          return copied.ok ? result() : commandError("scp", copied.error);
+        }
+      });
+      registerCommand("tar", {
+        category: "Files", description: "Create, inspect or extract a simulated tar archive.", examples: ["tar -cf backup.tar project", "tar -xf backup.tar"], options: ["-c create", "-x extract", "-t list", "-f archive file"], help: "tar -cf archive.tar files...\ntar -tf archive.tar\ntar -xf archive.tar\n\nCommon archive workflows are modeled without touching your real disk.",
+        execute: (args, ctx) => {
+          const { flags, rest } = flagSet(args);
+          const archiveName = rest.shift();
+          if (!archiveName) return commandError("tar", "missing archive name");
+          if (flags.has("c")) {
+            if (!rest.length) return commandError("tar", "cowardly refusing to create an empty archive");
+            const entries = [];
+            for (const source of rest) { const snapshot = ctx.fs.snapshot(source, ctx.cwd); if (!snapshot) return commandError("tar", `${source}: No such file or directory`); entries.push(...snapshot); }
+            ctx.fs.putFile(ctx.fs.normalize(archiveName, ctx.cwd), `tar archive (${entries.length} entries)\n`, "644", { archiveEntries: entries });
+            return result();
+          }
+          const archive = ctx.fs.get(archiveName, ctx.cwd);
+          if (!archive || !archive.archiveEntries) return commandError("tar", `${archiveName}: This is not a readable archive`);
+          if (flags.has("t")) return result(archive.archiveEntries.map((entry) => entry.path).join("\n") + "\n");
+          if (flags.has("x")) { ctx.fs.restore(archive.archiveEntries, ".", ctx.cwd); return result(); }
+          return commandError("tar", "use -c, -t or -x");
+        }
+      });
+      registerCommand("gzip", {
+        category: "Files", description: "Compress or decompress a simulated file.", examples: ["gzip release.txt", "gzip -d release.txt.gz"], options: ["-d decompress"], help: "gzip file\ngzip -d file.gz\n\nCompress one file and replace it with a .gz entry inside the virtual filesystem.",
+        execute: (args, ctx) => { const decompress = args.includes("-d") || args.includes("--decompress"); const path = args.find((arg) => !arg.startsWith("-")); if (!path) return commandError("gzip", "missing file operand"); if (decompress) { const node = ctx.fs.get(path, ctx.cwd); if (!node || !node.compressedContent) return commandError("gzip", `${path}: not in gzip format`); const restored = path.endsWith(".gz") ? path.slice(0, -3) : `${path}.out`; ctx.fs.putFile(ctx.fs.normalize(restored, ctx.cwd), node.compressedContent, node.mode); ctx.fs.remove(path, ctx.cwd, false, false); return result(); } const source = ctx.fs.get(path, ctx.cwd); if (!source) return commandError("gzip", `${path}: No such file or directory`); if (source.type !== "file") return commandError("gzip", `${path}: Is a directory`); ctx.fs.putFile(ctx.fs.normalize(`${path}.gz`, ctx.cwd), "compressed virtual data\n", source.mode, { compressedContent: source.content }); ctx.fs.remove(path, ctx.cwd, false, false); return result(); }
+      });
+      registerCommand("zip", {
+        category: "Files", description: "Create a simulated zip archive.", examples: ["zip backup.zip release.txt"], options: ["-r include directories recursively"], help: "zip [-r] archive.zip files...\n\nCreate a portable archive in the virtual filesystem.",
+        execute: (args, ctx) => { const { flags, rest } = flagSet(args); const archiveName = rest.shift(); if (!archiveName || !rest.length) return commandError("zip", "usage: zip [-r] archive.zip files..."); const entries = []; for (const source of rest) { const snapshot = ctx.fs.snapshot(source, ctx.cwd); if (!snapshot) return commandError("zip", `${source}: No such file or directory`); if (snapshot.some((entry) => entry.type === "dir") && !flags.has("r")) return commandError("zip", `${source}: is a directory; use -r`); entries.push(...snapshot); } ctx.fs.putFile(ctx.fs.normalize(archiveName, ctx.cwd), `zip archive (${entries.length} entries)\n`, "644", { archiveEntries: entries }); return result(); }
+      });
+      registerCommand("unzip", {
+        category: "Files", description: "Extract a simulated zip archive.", examples: ["unzip backup.zip -d restored"], options: ["-d destination directory"], help: "unzip archive.zip [-d destination]\n\nExtract an archive into the current directory or a destination.",
+        execute: (args, ctx) => { const archiveName = args.find((arg) => !arg.startsWith("-")); const dIndex = args.indexOf("-d"); const destination = dIndex >= 0 ? args[dIndex + 1] : "."; const archive = archiveName && ctx.fs.get(archiveName, ctx.cwd); if (!archive || !archive.archiveEntries) return commandError("unzip", `${archiveName || ""}: cannot find or read archive`); ctx.fs.restore(archive.archiveEntries, destination, ctx.cwd); return result(`Archive: ${archiveName}\n  extracting: ${destination}\n`); }
+      });
+      registerCommand("man", {
+        category: "Shell", description: "Read a concise manual page.", examples: ["man grep", "man chmod"], help: "man command\n\nOpen Terminal Quest's short, task-oriented reference for a command.",
+        execute: (args) => { const name = args[0]; const entry = name && COMMANDS[name]; if (!entry) return commandError("man", `${name || ""}: no manual entry`); const options = entry.options?.length ? `\nCOMMON OPTIONS\n  ${entry.options.join("\n  ")}\n` : ""; return result(`NAME\n  ${entry.name} — ${entry.description}\n\nSYNOPSIS\n  ${entry.help.split("\n")[0]}\n\nGUIDE\n  ${entry.help.split("\n").slice(2).join(" ").trim()}\n${options}\nEXAMPLE\n  ${(entry.examples || [entry.name])[0]}\n`); }
+      });
+      registerCommand("history", {
+        category: "Shell", description: "Review commands from this session.", examples: ["history"], help: "history\n\nPrint commands entered in the current simulated session.",
+        execute: (_args, ctx) => result(ctx.engine.history.map((line, index) => `${String(index + 1).padStart(4, " ")}  ${line}`).join("\n") + (ctx.engine.history.length ? "\n" : ""))
+      });
+      registerCommand("which", {
+        category: "Shell", description: "Find whether a command is available.", examples: ["which grep"], help: "which command\n\nShow the educational path used for a registered command.",
+        execute: (args) => { if (!args.length) return commandError("which", "missing argument"); const output = args.map((name) => COMMANDS[name] ? `/usr/bin/${name}` : `${name} not found`).join("\n"); return result(output + "\n"); }
+      });
+      registerCommand("export", {
+        category: "Shell", description: "Set an environment variable for this session.", examples: ["export PROJECT=terminal-quest"], help: "export NAME=value\n\nSet a variable in the simulated shell environment.",
+        execute: (args, ctx) => { if (!args.length) return result(Object.entries(ctx.env).sort().map(([key, value]) => `declare -x ${key}="${value}"`).join("\n") + "\n"); let stderr = ""; args.forEach((assignment) => { const match = assignment.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/); if (!match) stderr += `export: ${assignment}: not a valid identifier\n`; else ctx.engine.baseEnv[match[1]] = match[2]; }); return result("", stderr); }
+      });
+      registerCommand("env", {
+        category: "Shell", description: "Print the current environment.", examples: ["env", "env | grep HOME"], help: "env\n\nList variables visible to the current simulated shell.",
+        execute: (_args, ctx) => result(Object.entries(ctx.env).sort().map(([key, value]) => `${key}=${value}`).join("\n") + "\n")
+      });
+      registerCommand("open", {
+        category: "System", description: "Open a path using the simulated macOS desktop.", examples: ["open ."], platforms: ["macOS"], help: "open path\n\nmacOS helper for opening a file or directory; this version only reports what it would open.",
+        execute: (args, ctx) => { const path = args[0] || "."; if (!ctx.fs.exists(path, ctx.cwd)) return commandError("open", `${path}: No such file or directory`); return result(`Opening ${ctx.fs.normalize(path, ctx.cwd)} with the macOS desktop (simulated).\n`); }
+      });
+      registerCommand("xdg-open", {
+        category: "System", description: "Open a path using the simulated Linux desktop.", examples: ["xdg-open ."], platforms: ["Linux"], help: "xdg-open path\n\nLinux desktop helper equivalent to macOS open; it is simulated here.",
+        execute: (args, ctx) => { const path = args[0] || "."; if (!ctx.fs.exists(path, ctx.cwd)) return commandError("xdg-open", `${path}: No such file or directory`); return result(`Opening ${ctx.fs.normalize(path, ctx.cwd)} with the Linux desktop (simulated).\n`); }
+      });
+      registerCommand("pbcopy", {
+        category: "System", description: "Copy stdin into the simulated macOS clipboard.", examples: ["cat notes.txt | pbcopy"], platforms: ["macOS"], help: "pbcopy\n\nCopy stdin to a simulated clipboard. No system clipboard is accessed.",
+        execute: (_args, ctx) => { ctx.engine.clipboard = ctx.stdin; return result(); }
+      });
+      registerCommand("pbpaste", {
+        category: "System", description: "Print the simulated macOS clipboard.", examples: ["pbpaste"], platforms: ["macOS"], help: "pbpaste\n\nPrint the virtual clipboard value.",
+        execute: (_args, ctx) => result(ctx.engine.clipboard || "\n")
+      });
+      registerCommand("bash", { category: "Shell", description: "Identify Bash as a shell (not a nested interpreter here).", examples: ["echo $SHELL"], platforms: ["Linux"], help: "bash\n\nThe game models one shell syntax while teaching that many Linux servers default to Bash." , execute: (_args) => result("bash: nested shell simulation\n") });
+      registerCommand("zsh", { category: "Shell", description: "Identify Zsh as a shell (not a nested interpreter here).", examples: ["echo $SHELL"], platforms: ["macOS"], help: "zsh\n\nThe game models one shell syntax while teaching that modern macOS defaults to Zsh." , execute: (_args) => result("zsh: nested shell simulation\n") });
+
+      const checkResult = (ok, message) => ({ ok: !!ok, message });
+      const outputContains = (check, value, insensitive = false) => {
+        const output = insensitive ? String(check.output || "").toLowerCase() : String(check.output || "");
+        const target = insensitive ? String(value).toLowerCase() : String(value);
+        return output.includes(target);
+      };
+      const fileHas = (check, path, predicate) => {
+        const read = check.fs.read(path, check.cwd);
+        return read.ok && predicate(read.content);
+      };
+      const makeChallenge = (config) => ({
+        xp: 100,
+        platforms: ["macOS + Linux"],
+        hints: ["Pensá en la herramienta que trabaja con este objetivo.", "Usá la referencia rápida de Commands si necesitás recordar el nombre.", "Probá la forma más simple y observá la respuesta de la terminal."],
+        setup: () => makeBaseScenario(),
+        ...config
+      });
+      const sandboxSetup = (mutate = () => {}) => () => { const scenario = makeBaseScenario(); scenario.cwd = `${scenario.fs.home}/sandbox`; mutate(scenario); return scenario; };
+      const addFile = (scenario, path, content, mode = "644") => scenario.fs.putFile(path, content, mode);
+      const addDir = (scenario, path) => scenario.fs.putDir(path);
+      const base = () => makeBaseScenario();
+      const challengeList = [
+        makeChallenge({ id: "orientation-01", level: 1, levelName: "Where am I?", title: "Find your bearings", explanation: "Antes de tocar nada, ubicá tu sesión. La terminal siempre tiene un directorio de trabajo actual.", example: "pwd", objective: "Mostrá el directorio en el que estás.", solution: "pwd", validator: (check) => checkResult(check.cwd === HOME, "La sesión todavía no está mostrando tu carpeta personal."), hints: ["Necesitás una orden que imprima tu ubicación actual.", "El comando tiene tres letras y empieza con p.", "pwd"] }),
+        makeChallenge({ id: "orientation-02", level: 1, levelName: "Where am I?", title: "Read the room", explanation: "Listar primero te permite ver qué opciones tenés antes de elegir una ruta.", example: "ls\nls -la", objective: "Listá el contenido de tu carpeta personal.", solution: "ls", validator: (check) => checkResult(["Desktop", "Documents", "Downloads", "projects"].every((name) => String(check.output).includes(name)), "La salida todavía no muestra el contenido esperado de tu carpeta personal.") }),
+        makeChallenge({ id: "orientation-03", level: 1, levelName: "Where am I?", title: "Know the user", explanation: "En una Mac o en un servidor, saber con qué usuario estás operando evita sorpresas con permisos.", example: "whoami", objective: "Averiguá qué usuario está ejecutando esta sesión.", solution: "whoami", validator: (check) => checkResult(outputContains(check, "bruno"), "Todavía no aparece el usuario de la sesión."), hints: ["Buscá un comando que responda la pregunta ‘¿quién soy?’. ", "Es una sola palabra, muy descriptiva.", "whoami"] }),
+        makeChallenge({ id: "orientation-04", level: 1, levelName: "Where am I?", title: "See the hidden layer", explanation: "Los nombres que empiezan con un punto suelen guardar configuración. No aparecen en un ls común.", example: "ls -la", objective: "Listá los archivos ocultos y la información larga de tu carpeta personal.", solution: "ls -la", setup: () => { const scenario = base(); addFile(scenario, `${scenario.fs.home}/.config`, "theme=dark\n"); addFile(scenario, `${scenario.fs.home}/.env`, "MODE=practice\n"); return scenario; }, validator: (check) => checkResult(outputContains(check, ".config") && outputContains(check, ".env") && outputContains(check, "total"), "Faltan los archivos ocultos o el formato largo en la salida."), hints: ["ls acepta opciones para incluir ocultos y mostrar detalles.", "Las dos opciones son -a y -l; pueden combinarse.", "ls -la"] }),
+
+        makeChallenge({ id: "navigation-01", level: 2, levelName: "Move Around", title: "Step into projects", explanation: "Una ruta relativa se interpreta desde el directorio actual.", example: "cd projects\npwd", objective: "Entrá en la carpeta projects.", solution: "cd projects", validator: (check) => checkResult(check.cwd === `${HOME}/projects`, "Todavía no estás dentro de projects.") }),
+        makeChallenge({ id: "navigation-02", level: 2, levelName: "Move Around", title: "Take one step back", explanation: "El nombre .. representa el directorio padre, una de las piezas más importantes para moverte con rapidez.", example: "cd ..", objective: "Volvé a tu carpeta personal desde projects.", solution: "cd ..", setup: () => { const scenario = base(); scenario.cwd = `${scenario.fs.home}/projects`; return scenario; }, validator: (check) => checkResult(check.cwd === HOME, "El directorio actual todavía no es tu carpeta personal.") }),
+        makeChallenge({ id: "navigation-03", level: 2, levelName: "Move Around", title: "Go home", explanation: "~ es un atajo portable hacia tu carpeta personal.", example: "cd ~", objective: "Volvé a tu carpeta personal usando ~.", solution: "cd ~", setup: () => { const scenario = base(); scenario.cwd = `${scenario.fs.home}/Downloads`; return scenario; }, validator: (check) => checkResult(check.cwd === HOME, "~ todavía no te llevó a tu carpeta personal.") }),
+        makeChallenge({ id: "navigation-04", level: 2, levelName: "Move Around", title: "Visit the root", explanation: "La barra inicial representa la raíz de todo el filesystem.", example: "cd /\nls", objective: "Llegá a la raíz del filesystem virtual.", solution: "cd /", validator: (check) => checkResult(check.cwd === "/", "Todavía no estás en /.") }),
+        makeChallenge({ id: "navigation-05", level: 2, levelName: "Move Around", title: "Stay put", explanation: ". representa el directorio actual. Es útil al pasar rutas a otros comandos.", example: "cd .", objective: "Usá . sin cambiar tu ubicación actual.", solution: "cd .", validator: (check) => checkResult(check.cwd === HOME, "La ubicación final no coincide con el punto de partida."), hints: ["El punto representa dónde estás.", "Podés usarlo como destino de cd.", "cd ."] }),
+
+        makeChallenge({ id: "build-01", level: 3, levelName: "Build Something", title: "Make a room", explanation: "Los directorios son contenedores. Creá uno pequeño antes de llenarlo.", example: "mkdir projects", objective: "Dentro de sandbox, creá un directorio llamado projects.", solution: "mkdir projects", setup: sandboxSetup(), validator: (check) => checkResult(check.fs.isDir("projects", check.cwd), "Todavía no existe el directorio projects dentro de sandbox.") }),
+        makeChallenge({ id: "build-02", level: 3, levelName: "Build Something", title: "Build a path", explanation: "mkdir -p evita tener que crear cada directorio intermedio por separado.", example: "mkdir -p src/components", objective: "Dentro de sandbox, creá la ruta src/components de una sola vez.", solution: "mkdir -p src/components", setup: sandboxSetup(), validator: (check) => checkResult(check.fs.isDir("src/components", check.cwd), "La ruta anidada todavía no está completa.") }),
+        makeChallenge({ id: "build-03", level: 3, levelName: "Build Something", title: "Leave a marker", explanation: "touch crea un archivo vacío si todavía no existe.", example: "touch README.md", objective: "Dentro de sandbox, creá un archivo llamado README.md.", solution: "touch README.md", setup: sandboxSetup(), validator: (check) => checkResult(check.fs.get("README.md", check.cwd)?.type === "file", "Todavía no existe README.md en sandbox.") }),
+        makeChallenge({ id: "build-04", level: 3, levelName: "Build Something", title: "A tiny journal", explanation: "Combiná la creación de un directorio con la de un archivo.", example: "mkdir notes\ntouch notes/today.txt", objective: "Creá notes dentro de sandbox y, adentro, el archivo today.txt.", solution: "mkdir notes\ntouch notes/today.txt", setup: sandboxSetup(), validator: (check) => checkResult(check.fs.isDir("notes", check.cwd) && check.fs.get("notes/today.txt", check.cwd)?.type === "file", "Falta notes o falta today.txt dentro de notes.") }),
+
+        makeChallenge({ id: "move-copy-01", level: 4, levelName: "Move & Copy", title: "Keep a copy", explanation: "cp deja el original en su lugar y crea otra entrada.", example: "cp notes.txt notes-copy.txt", objective: "Copiá source.txt como source-copy.txt dentro de sandbox.", solution: "cp source.txt source-copy.txt", setup: sandboxSetup((scenario) => addFile(scenario, `${scenario.fs.home}/sandbox/source.txt`, "keep this original\n")), validator: (check) => checkResult(check.fs.exists("source.txt", check.cwd) && check.fs.exists("source-copy.txt", check.cwd), "La copia o el archivo original no están donde deberían."), hints: ["Necesitás una orden que duplique sin borrar el origen.", "La forma general es cp origen destino.", "cp source.txt source-copy.txt"] }),
+        makeChallenge({ id: "move-copy-02", level: 4, levelName: "Move & Copy", title: "Rename a draft", explanation: "mv sirve tanto para mover como para renombrar.", example: "mv draft.txt final.txt", objective: "Renombrá draft.txt como final.txt dentro de sandbox.", solution: "mv draft.txt final.txt", setup: sandboxSetup((scenario) => addFile(scenario, `${scenario.fs.home}/sandbox/draft.txt`, "ready\n")), validator: (check) => checkResult(!check.fs.exists("draft.txt", check.cwd) && check.fs.exists("final.txt", check.cwd), "El nombre anterior todavía existe o falta final.txt.") }),
+        makeChallenge({ id: "move-copy-03", level: 4, levelName: "Move & Copy", title: "Duplicate a folder", explanation: "Los directorios requieren la opción recursiva porque contienen más entradas.", example: "cp -r assets assets-copy", objective: "Copiá la carpeta assets como assets-copy, incluyendo su contenido.", solution: "cp -r assets assets-copy", setup: sandboxSetup((scenario) => { addDir(scenario, `${scenario.fs.home}/sandbox/assets`); addFile(scenario, `${scenario.fs.home}/sandbox/assets/logo.txt`, "asset\n"); }), validator: (check) => checkResult(check.fs.isDir("assets-copy", check.cwd) && check.fs.exists("assets-copy/logo.txt", check.cwd), "Falta la carpeta copiada o su contenido."), hints: ["cp necesita una opción cuando el origen es un directorio.", "La opción es -r.", "cp -r assets assets-copy"] }),
+        makeChallenge({ id: "move-copy-04", level: 4, levelName: "Move & Copy", title: "Move the old folder", explanation: "Mover un directorio conserva sus contenidos y cambia su ubicación/nombre.", example: "mv old-name new-name", objective: "Renombrá old-name como new-name.", solution: "mv old-name new-name", setup: sandboxSetup((scenario) => { addDir(scenario, `${scenario.fs.home}/sandbox/old-name`); addFile(scenario, `${scenario.fs.home}/sandbox/old-name/keep.txt`, "keep\n"); }), validator: (check) => checkResult(!check.fs.exists("old-name", check.cwd) && check.fs.exists("new-name/keep.txt", check.cwd), "El directorio no fue renombrado conservando su contenido.") }),
+
+        makeChallenge({ id: "delete-01", level: 5, levelName: "Delete Carefully", title: "Remove one file", explanation: "rm quita archivos directamente; en Unix no hay una papelera tradicional para recuperarlos.", example: "rm old.txt", objective: "Eliminá old.txt dentro de sandbox.", solution: "rm old.txt", setup: sandboxSetup((scenario) => addFile(scenario, `${scenario.fs.home}/sandbox/old.txt`, "temporary\n")), validator: (check) => checkResult(!check.fs.exists("old.txt", check.cwd), "old.txt todavía existe.") }),
+        makeChallenge({ id: "delete-02", level: 5, levelName: "Delete Carefully", title: "Empty first", explanation: "rmdir es deliberadamente conservador: solo trabaja sobre directorios vacíos.", example: "rmdir empty-folder", objective: "Eliminá el directorio vacío empty-folder.", solution: "rmdir empty-folder", setup: sandboxSetup((scenario) => addDir(scenario, `${scenario.fs.home}/sandbox/empty-folder`)), validator: (check) => checkResult(!check.fs.exists("empty-folder", check.cwd), "empty-folder todavía existe.") }),
+        makeChallenge({ id: "delete-03", level: 5, levelName: "Delete Carefully", title: "Clear a tree", explanation: "rm -r baja recursivamente por un directorio. En la vida real, revisá dos veces la ruta.", example: "rm -r build", objective: "Eliminá la carpeta build y todo su contenido.", solution: "rm -r build", setup: sandboxSetup((scenario) => { addDir(scenario, `${scenario.fs.home}/sandbox/build/assets`); addFile(scenario, `${scenario.fs.home}/sandbox/build/app.js`, "bundle\n"); }), validator: (check) => checkResult(!check.fs.exists("build", check.cwd), "build o parte de su contenido todavía existe."), hints: ["rm solo no elimina directorios.", "Necesitás la opción recursiva.", "rm -r build"] }),
+
+        makeChallenge({ id: "read-01", level: 6, levelName: "Read Files", title: "Read the welcome", explanation: "cat es la herramienta directa para ver un archivo completo.", example: "cat welcome.txt", objective: "Leé welcome.txt y encontrá el mensaje de bienvenida.", solution: "cat welcome.txt", validator: (check) => checkResult(outputContains(check, "Welcome to your virtual terminal"), "La salida todavía no contiene el mensaje de bienvenida.") }),
+        makeChallenge({ id: "read-02", level: 6, levelName: "Read Files", title: "Inspect the beginning", explanation: "head es útil cuando solo necesitás el inicio de un log o un archivo grande.", example: "head -n 2 server.log", objective: "Mostrá las primeras dos líneas de server.log.", solution: "head -n 2 server.log", setup: () => { const scenario = base(); addFile(scenario, `${scenario.fs.home}/server.log`, "BOOT\nREADY\nREQUEST\nDONE\n"); return scenario; }, validator: (check) => checkResult(outputContains(check, "BOOT") && outputContains(check, "READY") && !outputContains(check, "REQUEST"), "La salida no parece contener solamente las dos primeras líneas.") }),
+        makeChallenge({ id: "read-03", level: 6, levelName: "Read Files", title: "Inspect the end", explanation: "tail te deja mirar lo más reciente de un archivo sin imprimirlo completo.", example: "tail -n 2 server.log", objective: "Mostrá las últimas dos líneas de server.log.", solution: "tail -n 2 server.log", setup: () => { const scenario = base(); addFile(scenario, `${scenario.fs.home}/server.log`, "BOOT\nREADY\nREQUEST\nDONE\n"); return scenario; }, validator: (check) => checkResult(outputContains(check, "REQUEST") && outputContains(check, "DONE") && !outputContains(check, "BOOT"), "La salida no parece contener solamente las dos últimas líneas.") }),
+        makeChallenge({ id: "read-04", level: 6, levelName: "Read Files", title: "Open the notes", explanation: "less suele ser el punto medio entre cat y una herramienta de búsqueda: permite inspeccionar sin inundar la pantalla.", example: "less projects/README.md", objective: "Inspeccioná el README dentro de projects.", solution: "less projects/README.md", validator: (check) => checkResult(outputContains(check, "# projects") && outputContains(check, "[less]"), "La vista de less todavía no muestra el README.") }),
+
+        makeChallenge({ id: "search-01", level: 7, levelName: "Find Things", title: "Find an error", explanation: "grep trabaja sobre el contenido: te dice qué líneas contienen una palabra o patrón.", example: "grep ERROR server.log", objective: "Encontrá las líneas con ERROR dentro de server.log.", solution: "grep ERROR server.log", setup: () => { const scenario = base(); addFile(scenario, `${scenario.fs.home}/server.log`, "INFO boot\nERROR timeout\nINFO retry\n"); return scenario; }, validator: (check) => checkResult(outputContains(check, "ERROR timeout"), "No aparece la línea con ERROR.") }),
+        makeChallenge({ id: "search-02", level: 7, levelName: "Find Things", title: "Ignore case", explanation: "-i evita que una diferencia entre mayúsculas y minúsculas te haga perder una coincidencia.", example: "grep -i warning system.log", objective: "Encontrá WARNING aunque el archivo lo escriba en minúsculas.", solution: "grep -i warning system.log", setup: () => { const scenario = base(); addFile(scenario, `${scenario.fs.home}/system.log`, "INFO start\nWarning: low disk\nINFO end\n"); return scenario; }, validator: (check) => checkResult(outputContains(check, "Warning", true), "La búsqueda todavía no encontró Warning ignorando mayúsculas.") }),
+        makeChallenge({ id: "search-03", level: 7, levelName: "Search recursively", explanation: "Con -r, grep recorre carpetas y te muestra de qué archivo proviene cada coincidencia.", title: "Search the project", example: "grep -r TODO projects", objective: "Encontrá la línea TODO dentro de cualquier archivo de projects.", solution: "grep -r TODO projects", setup: () => { const scenario = base(); addFile(scenario, `${scenario.fs.home}/projects/app.js`, "const ready = true;\n// TODO: add tests\n"); return scenario; }, validator: (check) => checkResult(outputContains(check, "TODO") && outputContains(check, "app.js"), "La búsqueda recursiva no encontró el TODO dentro del proyecto.") }),
+        makeChallenge({ id: "search-04", level: 7, levelName: "Find by name", title: "Locate the logs", explanation: "find pregunta por rutas y nombres; no necesita que conozcas el contenido por adelantado.", example: "find . -name '*.log'", objective: "Encontrá todos los archivos .log dentro de tu carpeta personal.", solution: "find . -name '*.log'", setup: () => { const scenario = base(); addFile(scenario, `${scenario.fs.home}/projects/app.log`, "INFO\n"); addFile(scenario, `${scenario.fs.home}/Downloads/archive.log`, "old\n"); return scenario; }, validator: (check) => checkResult(outputContains(check, "app.log") && outputContains(check, "archive.log"), "Falta uno de los archivos .log en la búsqueda.") }),
+        makeChallenge({ id: "search-05", level: 7, levelName: "Find by type", title: "Separate files from folders", explanation: "find también puede restringir el tipo de entrada, algo útil cuando un nombre se repite.", example: "find projects -type f -name '*.txt'", objective: "Encontrá los archivos .txt dentro de projects, sin devolver directorios.", solution: "find projects -type f -name '*.txt'", validator: (check) => checkResult(outputContains(check, "todo.txt") && !outputContains(check, "projects\n"), "La búsqueda no parece estar limitada a archivos .txt.") }),
+
+        makeChallenge({ id: "redirect-01", level: 8, levelName: "Redirect", title: "Write a file", explanation: "> conecta la salida de un comando con un archivo y reemplaza su contenido.", example: "echo \"hello\" > hello.txt", objective: "Creá hello.txt con una línea que diga hello.", solution: "echo \"hello\" > hello.txt", setup: sandboxSetup(), validator: (check) => checkResult(fileHas(check, "hello.txt", (content) => content === "hello\n"), "hello.txt no contiene exactamente la línea esperada."), hints: ["Usá echo para producir una línea y un operador para guardarla.", "El operador de reemplazo es >.", "echo \"hello\" > hello.txt"] }),
+        makeChallenge({ id: "redirect-02", level: 8, levelName: "Redirect", title: "Append a second line", explanation: ">> agrega al final; es una diferencia pequeña con consecuencias grandes en logs.", example: "echo \"mundo\" >> hello.txt", objective: "Agregá la línea mundo al final de hello.txt sin borrar hello.", solution: "echo \"mundo\" >> hello.txt", setup: sandboxSetup((scenario) => addFile(scenario, `${scenario.fs.home}/sandbox/hello.txt`, "hello\n")), validator: (check) => checkResult(fileHas(check, "hello.txt", (content) => content === "hello\nmundo\n"), "El archivo no conserva hello y no termina con mundo."), hints: ["Necesitás escribir sin reemplazar lo que ya existe.", "El operador tiene dos signos >.", "echo \"mundo\" >> hello.txt"] }),
+        makeChallenge({ id: "redirect-03", level: 8, levelName: "Redirect", title: "Save the signal", explanation: "Podés combinar una búsqueda con una redirección para convertir una salida momentánea en un archivo útil.", example: "grep ERROR server.log > errors.txt", objective: "Guardá en errors.txt todas las líneas ERROR de server.log.", solution: "grep ERROR server.log > errors.txt", setup: () => { const scenario = base(); addFile(scenario, `${scenario.fs.home}/server.log`, "INFO boot\nERROR timeout\nINFO retry\nERROR refused\n"); return scenario; }, validator: (check) => checkResult(fileHas(check, "errors.txt", (content) => content.split("\n").filter(Boolean).length === 2 && content.includes("ERROR")), "errors.txt todavía no contiene las dos líneas ERROR.") }),
+
+        makeChallenge({ id: "pipes-01", level: 9, levelName: "Pipes", title: "Filter a stream", explanation: "Un pipe convierte la salida del comando de la izquierda en la entrada del de la derecha.", example: "cat users.txt | grep admin", objective: "Mostrá solamente las líneas de users.txt que contienen admin.", solution: "cat users.txt | grep admin", setup: () => { const scenario = base(); addFile(scenario, `${scenario.fs.home}/users.txt`, "admin alice\nbruno\nadmin carla\n"); return scenario; }, validator: (check) => checkResult(outputContains(check, "admin alice") && outputContains(check, "admin carla") && !outputContains(check, "bruno\n"), "La salida todavía incluye líneas que no contienen admin o no muestra las correctas.") }),
+        makeChallenge({ id: "pipes-02", level: 9, levelName: "Pipes", title: "Filter a listing", explanation: "Los nombres listados también son texto: ls puede alimentar otra herramienta.", example: "ls | grep txt", objective: "Listá solamente los archivos .txt de tu carpeta personal.", solution: "ls | grep txt", setup: () => { const scenario = base(); addFile(scenario, `${scenario.fs.home}/alpha.txt`, "a\n"); addFile(scenario, `${scenario.fs.home}/beta.md`, "b\n"); return scenario; }, validator: (check) => checkResult(outputContains(check, "alpha.txt") && !outputContains(check, "beta.md"), "La salida no está filtrando la lista como se pidió.") }),
+        makeChallenge({ id: "pipes-03", level: 9, levelName: "Pipes", title: "Sort and deduplicate", explanation: "Las pipes permiten construir herramientas pequeñas encadenando transformaciones.", example: "sort names.txt | uniq", objective: "Ordená names.txt y eliminá duplicados consecutivos.", solution: "sort names.txt | uniq", setup: () => { const scenario = base(); addFile(scenario, `${scenario.fs.home}/names.txt`, "zeta\nadmin\nadmin\nroot\n"); return scenario; }, validator: (check) => checkResult(String(check.output).trim() === "admin\nroot\nzeta", "El resultado no está ordenado y sin duplicados."), hints: ["Necesitás dos operaciones: una ordena y otra colapsa repeticiones.", "Conectalas con |.", "sort names.txt | uniq"] }),
+
+        makeChallenge({ id: "combine-01", level: 10, levelName: "Combine", title: "Boss 1 · Project setup", boss: true, xp: 150, explanation: "Ahora no hay receta paso a paso. Pensá en la estructura final y construíla con operaciones que ya conocés.", example: "mkdir -p website/scripts\ntouch website/index.html website/styles.css website/scripts/app.js", objective: "Dentro de ~/projects, creá website con index.html, styles.css y scripts/app.js.", solution: "cd ~/projects\nmkdir -p website/scripts\ntouch website/index.html website/styles.css website/scripts/app.js", setup: () => base(), validator: (check) => checkResult(check.fs.isDir("projects/website/scripts", HOME) && check.fs.exists("projects/website/index.html", HOME) && check.fs.exists("projects/website/styles.css", HOME) && check.fs.exists("projects/website/scripts/app.js", HOME), "La estructura website todavía no está completa."), hints: ["Primero necesitás trabajar dentro de ~/projects.", "mkdir -p puede construir website/scripts.", "mkdir -p ~/projects/website/scripts y luego touch de los tres archivos"] }),
+        makeChallenge({ id: "combine-02", level: 10, levelName: "Combine", title: "Verify the structure", explanation: "Una vez que algo existe, find es una forma reproducible de comprobarlo.", example: "find website -type f", objective: "Mostrá los tres archivos dentro de projects/website.", solution: "find projects/website -type f", setup: () => { const scenario = base(); addDir(scenario, `${scenario.fs.home}/projects/website/scripts`); addFile(scenario, `${scenario.fs.home}/projects/website/index.html`, ""); addFile(scenario, `${scenario.fs.home}/projects/website/styles.css`, ""); addFile(scenario, `${scenario.fs.home}/projects/website/scripts/app.js`, ""); return scenario; }, validator: (check) => checkResult(outputContains(check, "index.html") && outputContains(check, "styles.css") && outputContains(check, "app.js"), "La salida no enumera los tres archivos del sitio.") }),
+        makeChallenge({ id: "combine-03", level: 10, levelName: "Combine", title: "Extract the signal", explanation: "Buscar y redirigir es una de las combinaciones más habituales al investigar incidentes.", example: "grep -i error app.log > errors.txt", objective: "Buscá las líneas error sin importar mayúsculas y guardalas en errors.txt.", solution: "grep -i error app.log > errors.txt", setup: () => { const scenario = base(); addFile(scenario, `${scenario.fs.home}/app.log`, "INFO start\nError database\nINFO retry\nERROR timeout\n"); return scenario; }, validator: (check) => checkResult(fileHas(check, "errors.txt", (content) => content.includes("Error database") && content.includes("ERROR timeout")), "errors.txt no contiene las dos coincidencias de error."), hints: ["La búsqueda necesita ignorar mayúsculas y escribir en un archivo.", "Combiná grep -i con >.", "grep -i error app.log > errors.txt"] }),
+        makeChallenge({ id: "combine-04", level: 10, levelName: "Combine", title: "Package the work", explanation: "Los archivos comprimidos aparecen cuando necesitás mover un conjunto coherente sin perder su estructura.", example: "tar -cf website.tar website\ntar -tf website.tar", objective: "Creá website.tar a partir de la carpeta website y verificá su contenido.", solution: "tar -cf website.tar website\ntar -tf website.tar", setup: () => { const scenario = base(); addDir(scenario, `${scenario.fs.home}/website`); addFile(scenario, `${scenario.fs.home}/website/index.html`, "<h1>hello</h1>\n"); addFile(scenario, `${scenario.fs.home}/website/styles.css`, "body {}\n"); return scenario; }, validator: (check) => checkResult(check.fs.get("website.tar", check.cwd)?.archiveEntries?.some((entry) => entry.path.endsWith("index.html")) && outputContains(check, "website/index.html"), "El archivo website.tar no existe o no fue inspeccionado."), hints: ["tar crea un archivo a partir de una ruta.", "Usá -c para crear, -f para indicar el nombre y -t para listar.", "tar -cf website.tar website"] }),
+
+        makeChallenge({ id: "permissions-01", level: 11, levelName: "Permissions", title: "Make it executable", explanation: "x significa que un archivo puede ejecutarse. En un script suele ser el primer permiso que necesitás agregar.", example: "chmod +x script.sh", objective: "Agregale permiso de ejecución a script.sh.", solution: "chmod +x script.sh", setup: sandboxSetup((scenario) => addFile(scenario, `${scenario.fs.home}/sandbox/script.sh`, "#!/bin/sh\necho ready\n")), validator: (check) => checkResult(modeNumber(check.fs.get("script.sh", check.cwd)?.mode) & 0o111, "script.sh todavía no tiene permiso x."), hints: ["El comando que cambia permisos es chmod.", "Usá el modo simbólico +x.", "chmod +x script.sh"] }),
+        makeChallenge({ id: "permissions-02", level: 11, levelName: "Permissions", title: "Read 755", explanation: "La notación numérica resume r=4, w=2 y x=1 para usuario, grupo y otros.", example: "chmod 755 deploy.sh", objective: "Configurá deploy.sh con modo 755.", solution: "chmod 755 deploy.sh", setup: sandboxSetup((scenario) => addFile(scenario, `${scenario.fs.home}/sandbox/deploy.sh`, "#!/bin/sh\n")), validator: (check) => checkResult(check.fs.get("deploy.sh", check.cwd)?.mode === "755", "El modo final de deploy.sh no es 755."), hints: ["Tres dígitos representan usuario, grupo y otros.", "7 es rwx; 5 es r-x.", "chmod 755 deploy.sh"] }),
+        makeChallenge({ id: "permissions-03", level: 11, levelName: "Permissions", title: "Read the mode", explanation: "ls -l te deja inspeccionar antes de ejecutar o compartir un archivo.", example: "ls -l script.sh", objective: "Mostrá el permiso largo de script.sh y verificá que sea ejecutable.", solution: "ls -l script.sh", setup: sandboxSetup((scenario) => addFile(scenario, `${scenario.fs.home}/sandbox/script.sh`, "echo ok\n", "755")), validator: (check) => checkResult(outputContains(check, "-rwxr-xr-x") && outputContains(check, "script.sh"), "La salida larga no muestra script.sh como ejecutable.") }),
+
+        makeChallenge({ id: "process-01", level: 12, levelName: "Processes", title: "Take a snapshot", explanation: "ps es una fotografía; no necesitás cerrar nada para inspeccionar qué corre.", example: "ps aux", objective: "Listá los procesos simulados con información amplia.", solution: "ps aux", validator: (check) => checkResult(outputContains(check, "PID") && outputContains(check, "Terminal Quest"), "La tabla de procesos no aparece con el formato esperado.") }),
+        makeChallenge({ id: "process-02", level: 12, levelName: "Processes", title: "Watch activity", explanation: "top prioriza una vista orientada a consumo de recursos.", example: "top", objective: "Abrí una instantánea de los procesos que más recursos consumen.", solution: "top", validator: (check) => checkResult(outputContains(check, "%CPU") && outputContains(check, "COMMAND"), "La vista de top todavía no está presente.") }),
+        makeChallenge({ id: "process-03", level: 12, levelName: "Processes", title: "Stop one process", explanation: "kill recibe un PID, no un nombre. Confirmá el número antes de usarlo.", example: "ps\nkill 840", objective: "Terminá el proceso ficticio Terminal Quest con PID 840.", solution: "kill 840", validator: (check) => checkResult(check.engine.processes.find((process) => process.pid === 840)?.killed === true, "El proceso 840 todavía sigue activo.") }),
+        makeChallenge({ id: "process-04", level: 12, levelName: "Processes", title: "Stop by name", explanation: "killall opera sobre el nombre y puede afectar más de un proceso.", example: "killall node", objective: "Detené todos los procesos ficticios cuyo comando contenga node.", solution: "killall node", setup: () => makeBaseScenario({ processes: [{ pid: 1, user: "root", cpu: "0", mem: "0", command: "launchd" }, { pid: 2100, user: "bruno", cpu: "30", mem: "4", command: "node api.js" }, { pid: 2101, user: "bruno", cpu: "12", mem: "2", command: "node worker.js" }] }), validator: (check) => checkResult(check.engine.processes.filter((process) => process.command.includes("node")).every((process) => process.killed), "Todavía queda un proceso node activo.") }),
+
+        makeChallenge({ id: "system-01", level: 13, levelName: "System", title: "Name the system", explanation: "macOS y Linux comparten muchas herramientas, pero no siempre imprimen exactamente lo mismo.", example: "uname -a", objective: "Identificá el sistema operativo simulado de esta sesión.", solution: "uname -a", validator: (check) => checkResult(outputContains(check, "Darwin"), "Esta sesión local debería identificarse como Darwin/macOS.") }),
+        makeChallenge({ id: "system-02", level: 13, levelName: "System", title: "Check the disk", explanation: "df responde cuánto espacio queda disponible en los filesystems montados.", example: "df -h", objective: "Consultá el espacio disponible del filesystem virtual.", solution: "df -h", validator: (check) => checkResult(outputContains(check, "Filesystem") && outputContains(check, "/"), "La tabla de df no aparece completa.") }),
+        makeChallenge({ id: "system-03", level: 13, levelName: "System", title: "Measure a project", explanation: "du mira cuánto ocupa una ruta; -s resume y -h facilita la lectura.", example: "du -sh projects", objective: "Medí el tamaño de la carpeta projects.", solution: "du -sh projects", validator: (check) => checkResult(outputContains(check, "projects") && /\d/.test(check.output), "La salida de du no muestra una medida para projects.") }),
+        makeChallenge({ id: "system-04", level: 13, levelName: "System", title: "Read the clock", explanation: "uptime resume tiempo encendido y carga; es una primera mirada rápida sobre un servidor.", example: "uptime", objective: "Consultá el uptime de la máquina virtual.", solution: "uptime", validator: (check) => checkResult(outputContains(check, "load averages"), "La salida no contiene el resumen de uptime.") }),
+        makeChallenge({ id: "system-05", level: 13, levelName: "System", title: "Linux memory", explanation: "free es común en Linux pero no viene como comando estándar de macOS. La diferencia importa cuando cambiás de máquina.", example: "free -h", objective: "En esta sesión Linux, consultá la memoria disponible.", solution: "free -h", platforms: ["Linux"], setup: () => makeBaseScenario({ platform: "Linux", hostname: "ubuntu-lab" }), validator: (check) => checkResult(outputContains(check, "Mem:") && outputContains(check, "available"), "La salida de free no muestra la tabla de memoria Linux.") }),
+
+        makeChallenge({ id: "network-01", level: 14, levelName: "Network", title: "Check reachability", explanation: "ping sirve para una primera señal de conectividad, no para probar que una aplicación web funcione.", example: "ping -c 3 raspberrypi", objective: "Hacé tres pings simulados a raspberrypi.", solution: "ping -c 3 raspberrypi", validator: (check) => checkResult(outputContains(check, "0.0% packet loss") && outputContains(check, "3 packets transmitted"), "La estadística de ping no muestra tres paquetes sin pérdida."), hints: ["ping recibe un host y puede limitar la cantidad de paquetes.", "Usá -c 3 antes del nombre del host.", "ping -c 3 raspberrypi"] }),
+        makeChallenge({ id: "network-02", level: 14, levelName: "Network", title: "Inspect an endpoint", explanation: "curl suele ser la herramienta rápida para hablar con HTTP desde una terminal.", example: "curl https://example.com/health", objective: "Consultá el endpoint simulado de health con curl.", solution: "curl https://example.com/health", validator: (check) => checkResult(outputContains(check, '"status": "ok"') && outputContains(check, '"simulated": true'), "La respuesta simulada de curl no aparece.") }),
+        makeChallenge({ id: "network-03", level: 14, levelName: "Network", title: "Open the folder", explanation: "open . es una comodidad de macOS. En Linux de escritorio suele usarse xdg-open .", example: "open .", objective: "Abrí el directorio actual con la herramienta de macOS.", solution: "open .", platforms: ["macOS"], validator: (check) => checkResult(outputContains(check, "Opening") && outputContains(check, "simulated"), "open no devolvió la confirmación simulada.") }),
+
+        makeChallenge({ id: "remote-01", level: 15, levelName: "Remote", title: "Boss 4 · Raspberry Pi", boss: true, xp: 150, explanation: "Una conexión remota cambia el contexto: el prompt y el filesystem ya no son los de tu Mac.", example: "ssh bruno@raspberrypi", objective: "Conectate a la Raspberry Pi simulada y entrá en /var/log.", solution: "ssh bruno@raspberrypi\ncd /var/log", setup: () => makeBaseScenario({ remoteFactory: () => makeRemoteScenario("raspberrypi", "bruno") }), validator: (check) => checkResult(check.engine.remoteHost === "raspberrypi" && check.cwd === "/var/log", "Todavía no estás conectado a Raspberry Pi en /var/log.") }),
+        makeChallenge({ id: "remote-02", level: 15, levelName: "Remote", title: "Send a report", explanation: "scp copia archivos sin que tengas que abrir una segunda terminal interactiva.", example: "scp report.txt bruno@raspberrypi:~/", objective: "Copiá report.txt desde tu sesión local al home de raspberrypi.", solution: "scp report.txt bruno@raspberrypi:~/", setup: () => { const scenario = makeBaseScenario({ remoteFactory: () => makeRemoteScenario("raspberrypi", "bruno") }); addFile(scenario, `${scenario.fs.home}/report.txt`, "daily report\n"); return scenario; }, validator: (check) => { const session = check.engine.remoteSessions.raspberrypi; return checkResult(!!session?.fs.exists("report.txt", session.cwd), "report.txt todavía no aparece en el home remoto."); } }),
+        makeChallenge({ id: "remote-03", level: 15, levelName: "Remote", title: "Read the remote log", explanation: "Entrá, inspeccioná y salí: una sesión SSH es una secuencia de contexto, no una magia distinta.", example: "ssh bruno@raspberrypi\ncat /var/log/server.log", objective: "Conectate a raspberrypi y leé server.log dentro de /var/log.", solution: "ssh bruno@raspberrypi\ncat /var/log/server.log", setup: () => makeBaseScenario({ remoteFactory: () => makeRemoteScenario("raspberrypi", "bruno") }), validator: (check) => checkResult(check.engine.remoteHost === "raspberrypi" && outputContains(check, "ERROR database"), "La sesión no terminó mostrando el log remoto con sus errores.") }),
+
+        makeChallenge({ id: "environment-01", level: 16, levelName: "Environment", title: "Find home", explanation: "HOME es una variable de entorno; usarla hace que una ruta sea más portable que escribir un nombre fijo.", example: "echo $HOME", objective: "Mostrá el valor de HOME.", solution: "echo $HOME", validator: (check) => checkResult(String(check.output).trim() === HOME, "HOME todavía no se imprimió como /home/bruno.") }),
+        makeChallenge({ id: "environment-02", level: 16, levelName: "Environment", title: "Name your project", explanation: "export deja una variable disponible para los comandos que siguen en esta sesión.", example: "export PROJECT=terminal-quest\necho $PROJECT", objective: "Definí PROJECT como terminal-quest y verificá su valor.", solution: "export PROJECT=terminal-quest\necho $PROJECT", validator: (check) => checkResult(check.engine.baseEnv.PROJECT === "terminal-quest" && outputContains(check, "terminal-quest"), "PROJECT no quedó definida con el valor correcto."), hints: ["Las variables se asignan con NOMBRE=valor.", "export hace que la asignación quede disponible para la sesión.", "export PROJECT=terminal-quest"] }),
+        makeChallenge({ id: "environment-03", level: 16, levelName: "Environment", title: "Investigate your tools", explanation: "man, which y history son herramientas para seguir trabajando cuando la memoria falla.", example: "man grep\nwhich grep\nhistory", objective: "Consultá la ayuda de grep, ubicá el comando y revisá tu historial.", solution: "man grep\nwhich grep\nhistory", validator: (check) => checkResult(check.engine.history.some((line) => line.startsWith("man grep")) && check.engine.history.some((line) => line.startsWith("which grep")) && check.engine.history.some((line) => line === "history") && outputContains(check, "man grep"), "Todavía faltan una o más de las tres herramientas de investigación."), hints: ["No necesitás adivinar: man explica y which ubica.", "Después de usar ambas, history muestra lo que hiciste.", "man grep, which grep y luego history"] }),
+
+        makeChallenge({ id: "power-01", level: 17, levelName: "Power User", title: "Boss 2 · Lost file", boss: true, xp: 150, explanation: "Cuando sabés el nombre pero no la ubicación, encontrá primero y mové después.", example: "find projects -name config.json\nmv projects/app/config.json backup/config.json", objective: "Encontrá config.json dentro de projects y movelo a ~/backup.", solution: "mkdir -p ~/backup\nfind ~/projects -name config.json\nmv ~/projects/app/config.json ~/backup/config.json", setup: () => { const scenario = base(); addDir(scenario, `${scenario.fs.home}/projects/app/config`); addFile(scenario, `${scenario.fs.home}/projects/app/config.json`, '{"mode":"prod"}\n'); addDir(scenario, `${scenario.fs.home}/backup`); return scenario; }, validator: (check) => checkResult(check.fs.exists("backup/config.json", HOME) && !check.fs.exists("projects/app/config.json", HOME), "config.json todavía no fue movido a ~/backup."), hints: ["Asegurate de que exista el destino antes de mover.", "find te revela la ruta; mv cambia su ubicación.", "mkdir -p ~/backup y luego mv ~/projects/app/config.json ~/backup/config.json"] }),
+        makeChallenge({ id: "power-02", level: 17, levelName: "Power User", title: "Boss 3 · Logs", boss: true, xp: 150, explanation: "Esta es una operación de incident response muy común: filtrar una señal y conservarla.", example: "grep ERROR server.log > errors.txt", objective: "Encontrá todas las líneas que contienen ERROR dentro de server.log y guardalas en errors.txt.", solution: "grep ERROR server.log > errors.txt", setup: () => { const scenario = base(); addFile(scenario, `${scenario.fs.home}/server.log`, "INFO boot\nERROR timeout\nWARN retry\nERROR refused\n"); return scenario; }, validator: (check) => checkResult(fileHas(check, "errors.txt", (content) => content.split("\n").filter(Boolean).length === 2 && content.split("\n").filter(Boolean).every((line) => line.includes("ERROR"))), "errors.txt no contiene exactamente las líneas ERROR esperadas."), hints: ["grep puede seleccionar líneas y > puede guardarlas.", "El patrón es ERROR y el archivo de salida errors.txt.", "grep ERROR server.log > errors.txt"] }),
+        makeChallenge({ id: "power-03", level: 17, levelName: "Power User", title: "Build a clean report", explanation: "Encadená búsqueda recursiva, ordenamiento, deduplicación y redirección para producir un reporte.", example: "grep -r admin projects/logs | sort | uniq > admin-users.txt", objective: "Encontrá las líneas admin en projects/logs, ordenalas, eliminá duplicados y guardalas en admin-users.txt.", solution: "grep -r admin projects/logs | sort | uniq > admin-users.txt", setup: () => { const scenario = base(); addDir(scenario, `${scenario.fs.home}/projects/logs`); addFile(scenario, `${scenario.fs.home}/projects/logs/a.log`, "admin alice\nadmin alice\n"); addFile(scenario, `${scenario.fs.home}/projects/logs/b.log`, "guest\nadmin carla\nadmin carla\n"); return scenario; }, validator: (check) => { const read = check.fs.read("admin-users.txt", check.cwd); if (!read.ok) return checkResult(false, "Todavía no existe admin-users.txt."); const lines = read.content.split("\n").filter(Boolean); return checkResult(lines.length === 2 && new Set(lines).size === 2 && lines.every((line) => line.includes("admin")), "El reporte no tiene las líneas admin únicas esperadas."); }, hints: ["Primero hacé grep recursivo; después convertí la salida en una lista estable.", "sort y uniq deben ir en una pipe antes de la redirección.", "grep -r admin projects/logs | sort | uniq > admin-users.txt"] }),
+
+        makeChallenge({ id: "server-01", level: 18, levelName: "Server Mission", title: "Enter the server room", explanation: "La última misión combina contexto remoto, logs, disco y procesos como una pequeña guardia de servidor.", example: "ssh admin@server\ngrep -r ERROR /var/log > ~/errors.txt\ndf -h\nkill 2451", objective: "Conectate al servidor, guardá los errores de /var/log en ~/errors.txt, revisá el espacio y terminá el proceso node que consume recursos.", solution: "ssh admin@server\ngrep -r ERROR /var/log > ~/errors.txt\ndf -h\nps aux\nkill 2451", boss: true, xp: 180, setup: () => makeBaseScenario({ remoteFactory: () => makeRemoteScenario("server", "admin") }), validator: (check) => { const remote = check.engine.remoteSessions.server; const errors = remote?.fs.read("/home/admin/errors.txt", "/home/admin"); const process = check.engine.processes.find((entry) => entry.pid === 2451); return checkResult(check.engine.remoteHost === "server" && errors?.ok && errors.content.includes("ERROR") && process?.killed === true, "La misión todavía necesita conexión, reporte de errores y proceso terminado."); }, hints: ["Primero cambiá de máquina con ssh; después trabajá sobre /var/log.", "grep -r y > pueden crear el reporte en una sola operación.", "Usá ssh, luego grep -r con >, después df -h y kill 2451."] }),
+        makeChallenge({ id: "server-02", level: 18, levelName: "Server Mission", title: "Recover an archive", explanation: "Comprimir, transferir y recuperar archivos son tareas habituales cuando administrás una máquina.", example: "zip backup.zip release.txt\nunzip backup.zip -d restored\ngzip release.txt", objective: "Creá backup.zip con release.txt, extraelo en restored y comprimí el original con gzip.", solution: "zip backup.zip release.txt\nunzip backup.zip -d restored\ngzip release.txt", setup: sandboxSetup((scenario) => addFile(scenario, `${scenario.fs.home}/sandbox/release.txt`, "release 1.0\n")), validator: (check) => checkResult(!!check.fs.get("backup.zip", check.cwd)?.archiveEntries && check.fs.exists("restored/release.txt", check.cwd) && check.fs.exists("release.txt.gz", check.cwd), "Falta el zip, la copia restaurada o el .gz final."), hints: ["zip y unzip trabajan con un archivo .zip; gzip reemplaza el original por .gz.", "Usá unzip -d restored para elegir el destino.", "zip backup.zip release.txt; unzip backup.zip -d restored; gzip release.txt"] }),
+        makeChallenge({ id: "server-03", level: 18, levelName: "Server Mission", title: "Keep your own manual", explanation: "La fluidez también es saber investigar: no memorices lo que podés consultar rápidamente.", example: "man find\nwhich find\nhistory", objective: "Usá man, which y history para investigar find y dejar un rastro de cómo lo resolviste.", solution: "man find\nwhich find\nhistory", setup: sandboxSetup(), validator: (check) => checkResult(check.engine.history.includes("man find") && check.engine.history.includes("which find") && check.engine.history.includes("history") && outputContains(check, "which find"), "La secuencia de investigación todavía no está completa.") })
+      ];
+      const ChallengeEngine = {
+        challenges: challengeList,
+        byId: (id) => challengeList.find((challenge) => challenge.id === id),
+        levels: () => [...new Set(challengeList.map((challenge) => challenge.level))].map((level) => ({ level, name: challengeList.find((challenge) => challenge.level === level).levelName }))
+      };
+
+      const Storage = {
+        load() {
+          try { return JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "null"); } catch (_error) { return null; }
+        },
+        save(data) {
+          try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (_error) { /* file:// may deny storage; the session still works */ }
+        },
+        clear() { try { window.localStorage.removeItem(STORAGE_KEY); } catch (_error) { /* no-op */ } }
+      };
+      function blankGameData() {
+        return { version: APP_VERSION, started: false, xp: 0, streak: 0, lastActiveDate: null, completed: {}, hints: {}, currentId: null, cleanSolves: 0 };
+      }
+      class GameState {
+        constructor() {
+          const saved = Storage.load() || {};
+          const defaults = blankGameData();
+          this.data = { ...defaults, ...saved, completed: { ...defaults.completed, ...(saved.completed || {}) }, hints: { ...defaults.hints, ...(saved.hints || {}) } };
+          this.data.version = APP_VERSION;
+          if (this.data.started) this.touchActivity(false);
+        }
+        save() { Storage.save(this.data); }
+        touchActivity(save = true) {
+          const current = today();
+          if (!this.data.lastActiveDate) this.data.streak = 1;
+          else {
+            const previous = new Date(`${this.data.lastActiveDate}T00:00:00`);
+            const now = new Date(`${current}T00:00:00`);
+            const difference = Math.round((now - previous) / 86400000);
+            if (difference === 1) this.data.streak = Math.max(1, Number(this.data.streak || 0) + 1);
+            else if (difference > 1) this.data.streak = 1;
+          }
+          this.data.lastActiveDate = current;
+          if (save) this.save();
+        }
+        start() { this.data.started = true; this.touchActivity(); }
+        setCurrent(id) { this.data.currentId = id; this.save(); }
+        isCompleted(id) { return !!this.data.completed[id]; }
+        hintLevel(id) { return Number(this.data.hints[id] || 0); }
+        useHint(id, level) { this.data.hints[id] = clamp(level, 0, 4); this.save(); }
+        scoreFor(id, baseXP) {
+          const level = this.hintLevel(id);
+          if (level >= 4) return 10;
+          if (level === 3) return Math.round(baseXP * .4);
+          if (level === 2) return Math.round(baseXP * .6);
+          if (level === 1) return Math.round(baseXP * .8);
+          return baseXP;
+        }
+        complete(challenge) {
+          if (this.isCompleted(challenge.id)) return 0;
+          const gained = this.scoreFor(challenge.id, challenge.xp);
+          this.data.completed[challenge.id] = { date: today(), xp: gained, hints: this.hintLevel(challenge.id) };
+          this.data.xp += gained;
+          if (this.hintLevel(challenge.id) === 0) this.data.cleanSolves += 1;
+          this.touchActivity(false);
+          this.save();
+          return gained;
+        }
+        firstIncompleteIndex() { return challengeList.findIndex((challenge) => !this.isCompleted(challenge.id)); }
+        reset() { this.data = blankGameData(); Storage.clear(); }
+      }
+
+      const state = new GameState();
+      const $ = (id) => document.getElementById(id);
+      const refs = {
+        onboarding: $("onboardingModal"), start: $("startButton"), brand: $("brandButton"), resetProgress: $("resetProgress"), toast: $("toast"),
+        learnView: $("learnView"), practiceView: $("practiceView"), commandsView: $("commandsView"), navButtons: [...document.querySelectorAll("[data-view]")],
+        lessonLevel: $("lessonLevel"), lessonBossLabel: $("lessonBossLabel"), lessonTitle: $("lessonTitle"), lessonExplanation: $("lessonExplanation"), lessonPlatforms: $("lessonPlatforms"), lessonExample: $("lessonExample"), lessonObjective: $("lessonObjective"), lessonObjectiveText: $("lessonObjectiveText"),
+        hintBox: $("hintBox"), hintLabel: $("hintLabel"), hintText: $("hintText"), hintButton: $("hintButton"), revealButton: $("revealButton"), resetChallenge: $("resetChallenge"), checkChallenge: $("checkChallenge"), continueChallenge: $("continueChallenge"), challengeFeedback: $("challengeFeedback"), feedbackTitle: $("feedbackTitle"), feedbackDetail: $("feedbackDetail"),
+        challengeProgressText: $("challengeProgressText"), challengeProgressPercent: $("challengeProgressPercent"), challengeProgressBar: $("challengeProgressBar"), levelNav: $("levelNav"), scenarioState: $("scenarioState"), topLevel: $("topLevel"), topXp: $("topXp"), topStreak: $("topStreak"),
+        commandSearch: $("commandSearch"), commandFilters: $("commandFilters"), commandGrid: $("commandGrid"), resetPractice: $("resetPractice")
+      };
+      const lessonBinding = { output: $("lessonOutput"), prompt: $("lessonPrompt"), input: $("lessonInput"), engine: null, type: "lesson" };
+      const practiceBinding = { output: $("practiceOutput"), prompt: $("practicePrompt"), input: $("practiceInput"), engine: null, type: "practice" };
+      let currentIndex = 0;
+      let currentChallenge = challengeList[0];
+      let activeView = "learn";
+      let libraryCategory = "All";
+      let toastTimer = null;
+
+      function appendTerminalText(binding, content, className = "terminal-stdout") {
+        if (content === undefined || content === null || content === "") return;
+        const lines = String(content).split("\n");
+        if (lines[lines.length - 1] === "") lines.pop();
+        lines.forEach((line) => { const element = document.createElement("div"); element.className = `terminal-line ${className}`; element.textContent = line; binding.output.appendChild(element); });
+        binding.output.scrollTop = binding.output.scrollHeight;
+      }
+      function appendTerminalCommand(binding, line) {
+        const element = document.createElement("div");
+        element.className = "terminal-line terminal-command";
+        const prompt = document.createElement("span");
+        prompt.className = "prompt";
+        prompt.textContent = `${binding.engine.prompt} `;
+        element.append(prompt, document.createTextNode(line));
+        binding.output.appendChild(element);
+      }
+      function showTerminalIntro(binding, message) {
+        binding.output.innerHTML = "";
+        appendTerminalText(binding, message, "terminal-system");
+        updatePrompt(binding);
+      }
+      function updatePrompt(binding) {
+        if (!binding.engine) return;
+        binding.prompt.textContent = `${binding.engine.prompt} `;
+        if (binding.type === "lesson") refs.scenarioState.textContent = binding.engine.remoteHost ? `REMOTE · ${binding.engine.remoteHost}` : `LOCAL · ${binding.engine.platform}`;
+      }
+      function runTerminal(binding) {
+        if (!binding.engine) return;
+        const line = binding.input.value;
+        if (!line.trim()) { binding.input.focus(); return; }
+        appendTerminalCommand(binding, line);
+        const execution = binding.engine.executeLine(line);
+        if (execution.clear) binding.output.innerHTML = "";
+        appendTerminalText(binding, execution.stderr, "terminal-stderr");
+        appendTerminalText(binding, execution.stdout, "terminal-stdout");
+        binding.input.value = "";
+        updatePrompt(binding);
+        binding.input.focus();
+      }
+      function handleTerminalKeydown(event, binding) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          if (binding.type === "lesson" && event.altKey) { checkChallenge(); return; }
+          runTerminal(binding);
+          return;
+        }
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          const engine = binding.engine;
+          if (!engine.history.length) return;
+          engine.historyIndex = clamp(engine.historyIndex - 1, 0, engine.history.length - 1);
+          binding.input.value = engine.history[engine.historyIndex] || "";
+          binding.input.setSelectionRange(binding.input.value.length, binding.input.value.length);
+          return;
+        }
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          const engine = binding.engine;
+          if (!engine.history.length) return;
+          engine.historyIndex = clamp(engine.historyIndex + 1, 0, engine.history.length);
+          binding.input.value = engine.history[engine.historyIndex] || "";
+          binding.input.setSelectionRange(binding.input.value.length, binding.input.value.length);
+          return;
+        }
+        if (event.key === "Tab") {
+          event.preventDefault();
+          const completion = binding.engine.autocomplete(binding.input.value);
+          if (completion.suggestions.length === 1) binding.input.value = completion.value;
+          else if (completion.suggestions.length > 1) appendTerminalText(binding, completion.suggestions.join("  ") + "\n", "terminal-system");
+          return;
+        }
+        if (event.key.toLowerCase() === "l" && event.ctrlKey) {
+          event.preventDefault();
+          binding.output.innerHTML = "";
+        }
+      }
+      function resetLessonTerminal() {
+        const scenario = currentChallenge.setup();
+        lessonBinding.engine = new TerminalEngine(scenario);
+        showTerminalIntro(lessonBinding, "Terminal Quest simulation · safe virtual filesystem\nType help if you need a reference.\n");
+      }
+      function resetPracticeTerminal() {
+        practiceBinding.engine = new TerminalEngine(makePracticeScenario());
+        showTerminalIntro(practiceBinding, "Practice sandbox · nothing here touches your computer\nType help if you need a reference.\n");
+      }
+      function setFeedback(type, title, detail = "") {
+        refs.challengeFeedback.className = `feedback visible ${type}`;
+        refs.feedbackTitle.textContent = title;
+        refs.feedbackDetail.textContent = detail;
+      }
+      function clearFeedback() { refs.challengeFeedback.className = "feedback"; refs.feedbackTitle.textContent = ""; refs.feedbackDetail.textContent = ""; }
+      function renderPlatforms(platforms) {
+        refs.lessonPlatforms.innerHTML = "";
+        const normalized = platforms.flatMap((platform) => platform === "macOS + Linux" ? ["macOS", "Linux"] : [platform]);
+        [...new Set(normalized)].forEach((platform) => { const badge = document.createElement("span"); badge.className = `platform-badge ${platform === "macOS" ? "mac" : "linux"}`; badge.textContent = platform; refs.lessonPlatforms.appendChild(badge); });
+      }
+      function renderHints() {
+        const level = state.hintLevel(currentChallenge.id);
+        refs.hintBox.className = level > 0 ? "hint-box visible" : "hint-box";
+        if (level > 0 && level <= 3) { refs.hintLabel.textContent = `Hint ${level}`; refs.hintText.textContent = currentChallenge.hints[level - 1]; }
+        if (level >= 4) { refs.hintLabel.textContent = "Answer"; refs.hintText.textContent = currentChallenge.solution; }
+        refs.hintButton.textContent = level >= 3 ? "Hints used" : `Hint${level ? ` ${level + 1}` : ""}`;
+        refs.hintButton.disabled = level >= 3;
+        refs.revealButton.disabled = level >= 4;
+      }
+      function renderProgress() {
+        const completed = Object.keys(state.data.completed).filter((id) => ChallengeEngine.byId(id)).length;
+        const percent = Math.round((completed / challengeList.length) * 100);
+        refs.challengeProgressText.textContent = `${completed} / ${challengeList.length} challenges`;
+        refs.challengeProgressPercent.textContent = `${percent}%`;
+        refs.challengeProgressBar.style.width = `${percent}%`;
+        refs.topXp.textContent = state.data.xp.toLocaleString();
+        refs.topStreak.textContent = `${state.data.streak || 0}d`;
+        refs.topLevel.textContent = String(currentChallenge.level).padStart(2, "0");
+      }
+      function renderLevelNav() {
+        refs.levelNav.innerHTML = "";
+        const firstIncomplete = state.firstIncompleteIndex();
+        const unlockThrough = firstIncomplete < 0 ? challengeList.length : firstIncomplete;
+        ChallengeEngine.levels().forEach(({ level }) => {
+          const indices = challengeList.map((challenge, index) => challenge.level === level ? index : -1).filter((index) => index >= 0);
+          const first = indices[0];
+          const last = indices[indices.length - 1];
+          const button = document.createElement("button");
+          button.className = "level-item";
+          button.textContent = String(level).padStart(2, "0");
+          button.title = challengeList[first].levelName;
+          button.disabled = first > unlockThrough;
+          if (last < unlockThrough) button.classList.add("done");
+          if (currentChallenge.level === level) button.classList.add("current");
+          button.addEventListener("click", () => { const firstOfLevel = indices[0]; if (firstOfLevel <= unlockThrough) loadChallenge(firstOfLevel); });
+          refs.levelNav.appendChild(button);
+        });
+      }
+      function renderChallenge() {
+        currentChallenge = challengeList[currentIndex];
+        refs.lessonLevel.textContent = String(currentChallenge.level).padStart(2, "0");
+        refs.lessonBossLabel.textContent = currentChallenge.boss ? " · BOSS" : "";
+        refs.lessonTitle.textContent = currentChallenge.title;
+        refs.lessonExplanation.textContent = currentChallenge.explanation;
+        refs.lessonExample.textContent = currentChallenge.example;
+        refs.lessonObjectiveText.textContent = currentChallenge.objective;
+        refs.lessonObjective.classList.toggle("boss", !!currentChallenge.boss);
+        renderPlatforms(currentChallenge.platforms);
+        clearFeedback();
+        refs.continueChallenge.hidden = true;
+        refs.checkChallenge.hidden = false;
+        resetLessonTerminal();
+        renderHints();
+        renderProgress();
+        renderLevelNav();
+        lessonBinding.input.focus();
+      }
+      function loadChallenge(index) {
+        currentIndex = clamp(index, 0, challengeList.length - 1);
+        state.setCurrent(challengeList[currentIndex].id);
+        renderChallenge();
+      }
+      function nextChallenge() {
+        const next = currentIndex + 1;
+        if (next < challengeList.length) loadChallenge(next);
+        else { setFeedback("success", "✓ Journey complete", "You reached the end of the first Terminal Quest path."); refs.continueChallenge.hidden = true; }
+      }
+      function checkChallenge() {
+        if (!currentChallenge || !lessonBinding.engine) return;
+        const check = { fs: lessonBinding.engine.fs, cwd: lessonBinding.engine.cwd, output: lessonBinding.engine.lastExecution.stdout, stderr: lessonBinding.engine.lastExecution.stderr, engine: lessonBinding.engine, history: lessonBinding.engine.history };
+        let validation;
+        try { validation = currentChallenge.validator(check); } catch (error) { validation = checkResult(false, "La validación encontró un problema interno. Reiniciá el desafío e intentá nuevamente."); }
+        const valid = typeof validation === "boolean" ? validation : validation?.ok;
+        if (!valid) { setFeedback("error", "El estado actual todavía no cumple el objetivo.", validation?.message || "Seguí explorando la salida de la terminal."); return; }
+        if (state.isCompleted(currentChallenge.id)) { setFeedback("info", "✓ Challenge already complete", "Podés repetirlo para practicar o continuar con la siguiente misión."); refs.checkChallenge.hidden = true; refs.continueChallenge.hidden = false; return; }
+        const gained = state.complete(currentChallenge);
+        setFeedback("success", "✓ Challenge complete", `+${gained} XP · ${state.hintLevel(currentChallenge.id) === 0 ? "sin pistas" : "pista utilizada"}`);
+        refs.checkChallenge.hidden = true;
+        refs.continueChallenge.hidden = false;
+        renderProgress();
+        renderLevelNav();
+        showToast(`+${gained} XP`);
+      }
+      function showNextHint() {
+        const level = state.hintLevel(currentChallenge.id);
+        if (level < 3) state.useHint(currentChallenge.id, level + 1);
+        renderHints();
+        lessonBinding.input.focus();
+      }
+      function revealAnswer() { state.useHint(currentChallenge.id, 4); renderHints(); lessonBinding.input.focus(); }
+      function showToast(message) {
+        refs.toast.textContent = message;
+        refs.toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => refs.toast.classList.remove("show"), 1800);
+      }
+      function switchView(view) {
+        activeView = view;
+        refs.navButtons.forEach((button) => button.classList.toggle("active", button.dataset.view === view));
+        refs.learnView.classList.toggle("active", view === "learn");
+        refs.practiceView.classList.toggle("active", view === "practice");
+        refs.commandsView.classList.toggle("active", view === "commands");
+        if (view === "learn") lessonBinding.input.focus();
+        if (view === "practice") practiceBinding.input.focus();
+      }
+      function resetProgress() {
+        if (!window.confirm("Reset all Terminal Quest progress, XP and streak?")) return;
+        state.reset();
+        currentIndex = 0;
+        refs.onboarding.classList.remove("hidden");
+        switchView("learn");
+        renderChallenge();
+        renderProgress();
+        showToast("Progress reset");
+      }
+
+      const categories = ["All", "Navigation", "Files", "Search", "Text", "System", "Processes", "Network", "Permissions", "Shell"];
+      function renderCommandFilters() {
+        refs.commandFilters.innerHTML = "";
+        categories.forEach((category) => { const button = document.createElement("button"); button.className = `filter-button ${libraryCategory === category ? "active" : ""}`; button.textContent = category; button.addEventListener("click", () => { libraryCategory = category; renderCommandFilters(); renderCommandGrid(); }); refs.commandFilters.appendChild(button); });
+      }
+      function renderCommandGrid() {
+        const query = refs.commandSearch.value.trim().toLowerCase();
+        const entries = Object.values(COMMANDS).filter((entry) => (libraryCategory === "All" || entry.category === libraryCategory) && (!query || `${entry.name} ${entry.description} ${entry.examples.join(" ")}`.toLowerCase().includes(query)));
+        refs.commandGrid.innerHTML = "";
+        if (!entries.length) { refs.commandGrid.innerHTML = '<div class="empty-library">No commands match that search.</div>'; return; }
+        entries.forEach((entry) => {
+          const card = document.createElement("article");
+          card.className = "command-card";
+          const name = document.createElement("div"); name.className = "command-name"; name.textContent = entry.name;
+          const description = document.createElement("div"); description.className = "command-description"; description.textContent = entry.description;
+          const example = document.createElement("pre"); example.className = "command-example"; example.textContent = entry.examples[0] || entry.name;
+          card.append(name, description, example);
+          if (entry.options?.length) { const options = document.createElement("div"); options.className = "command-options"; options.innerHTML = `<span>Common options:</span>${entry.options.map((option) => escapeHTML(option)).join("<br>")}`; card.appendChild(options); }
+          const meta = document.createElement("div"); meta.className = "command-meta";
+          const category = document.createElement("span"); category.className = "tag"; category.textContent = entry.category;
+          const platforms = document.createElement("span"); platforms.className = "tag"; platforms.textContent = entry.platforms.join(" · ");
+          meta.append(category, platforms); card.appendChild(meta); refs.commandGrid.appendChild(card);
+        });
+      }
+
+      lessonBinding.input.addEventListener("keydown", (event) => handleTerminalKeydown(event, lessonBinding));
+      practiceBinding.input.addEventListener("keydown", (event) => handleTerminalKeydown(event, practiceBinding));
+      refs.navButtons.forEach((button) => button.addEventListener("click", () => switchView(button.dataset.view)));
+      refs.brand.addEventListener("click", () => switchView("learn"));
+      refs.start.addEventListener("click", () => { state.start(); refs.onboarding.classList.add("hidden"); lessonBinding.input.focus(); });
+      refs.hintButton.addEventListener("click", showNextHint);
+      refs.revealButton.addEventListener("click", revealAnswer);
+      refs.resetChallenge.addEventListener("click", () => { clearFeedback(); resetLessonTerminal(); lessonBinding.input.focus(); });
+      refs.checkChallenge.addEventListener("click", checkChallenge);
+      refs.continueChallenge.addEventListener("click", nextChallenge);
+      refs.resetProgress.addEventListener("click", resetProgress);
+      refs.resetPractice.addEventListener("click", () => { resetPracticeTerminal(); practiceBinding.input.focus(); });
+      refs.commandSearch.addEventListener("input", renderCommandGrid);
+      document.addEventListener("keydown", (event) => {
+        if (activeView !== "learn" || refs.onboarding.classList.contains("hidden") === false) return;
+        if (event.altKey && event.key.toLowerCase() === "h" && document.activeElement !== lessonBinding.input) { event.preventDefault(); showNextHint(); }
+        if (event.altKey && event.key.toLowerCase() === "r") { event.preventDefault(); resetLessonTerminal(); }
+      });
+
+      const savedIndex = state.data.currentId ? challengeList.findIndex((challenge) => challenge.id === state.data.currentId) : -1;
+      const firstIncomplete = state.firstIncompleteIndex();
+      currentIndex = savedIndex >= 0 && (firstIncomplete < 0 || savedIndex <= firstIncomplete) ? savedIndex : firstIncomplete >= 0 ? firstIncomplete : challengeList.length - 1;
+      resetPracticeTerminal();
+      renderCommandFilters();
+      renderCommandGrid();
+      renderChallenge();
+      if (state.data.started) refs.onboarding.classList.add("hidden");
+      else refs.onboarding.classList.remove("hidden");
+      renderProgress();
+    })();
+  </script>
+</body>
+</html>
