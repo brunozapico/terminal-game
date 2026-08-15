@@ -130,6 +130,14 @@
     .level-item.current { color: var(--green); border-color: rgba(131,213,162,.45); background: var(--green-soft); }
     .level-item.done { color: var(--text); }
     .level-item:disabled { cursor: not-allowed; opacity: .45; }
+    .nav-label { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 16px; color: var(--muted-2); font-size: 10px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+    .nav-label span:last-child { color: var(--muted-2); font-size: 9px; font-weight: 500; letter-spacing: .03em; text-transform: none; }
+    .challenge-nav { max-height: 190px; margin-top: 8px; padding: 1px 4px 1px 1px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; overflow-y: auto; scrollbar-color: #2a343d transparent; }
+    .challenge-item { min-height: 27px; padding: 4px 2px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted-2); background: transparent; font: 10px var(--mono); }
+    .challenge-item:hover:not(:disabled) { color: var(--text); border-color: var(--line-strong); background: var(--panel-soft); }
+    .challenge-item.current { color: var(--green); border-color: rgba(131,213,162,.45); background: var(--green-soft); }
+    .challenge-item.done { color: var(--text); }
+    .challenge-item:disabled { cursor: not-allowed; opacity: .35; }
 
     .terminal-card { min-height: calc(100vh - 124px); display: flex; flex-direction: column; overflow: hidden; }
     .terminal-head { min-height: 58px; padding: 0 18px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); background: #101419; }
@@ -278,7 +286,10 @@
             <div class="level-progress">
               <div class="progress-line"><span id="challengeProgressText">0 / 0 challenges</span><span id="challengeProgressPercent">0%</span></div>
               <div class="progress-track"><span id="challengeProgressBar" style="width:0%"></span></div>
+              <div class="nav-label"><span>Levels</span><span>Jump by level</span></div>
               <div class="level-nav" id="levelNav" aria-label="Levels"></div>
+              <div class="nav-label"><span>Challenges</span><span id="challengeNavStatus">1 / 66 available</span></div>
+              <div class="challenge-nav" id="challengeNav" aria-label="Challenges"></div>
             </div>
           </aside>
 
@@ -1483,7 +1494,7 @@
         learnView: $("learnView"), practiceView: $("practiceView"), commandsView: $("commandsView"), navButtons: [...document.querySelectorAll("[data-view]")],
         lessonLevel: $("lessonLevel"), lessonBossLabel: $("lessonBossLabel"), lessonTitle: $("lessonTitle"), lessonExplanation: $("lessonExplanation"), lessonPlatforms: $("lessonPlatforms"), lessonExample: $("lessonExample"), lessonObjective: $("lessonObjective"), lessonObjectiveText: $("lessonObjectiveText"),
         hintBox: $("hintBox"), hintLabel: $("hintLabel"), hintText: $("hintText"), hintButton: $("hintButton"), revealButton: $("revealButton"), resetChallenge: $("resetChallenge"), checkChallenge: $("checkChallenge"), continueChallenge: $("continueChallenge"), challengeFeedback: $("challengeFeedback"), feedbackTitle: $("feedbackTitle"), feedbackDetail: $("feedbackDetail"),
-        challengeProgressText: $("challengeProgressText"), challengeProgressPercent: $("challengeProgressPercent"), challengeProgressBar: $("challengeProgressBar"), levelNav: $("levelNav"), scenarioState: $("scenarioState"), topLevel: $("topLevel"), topXp: $("topXp"), topStreak: $("topStreak"),
+        challengeProgressText: $("challengeProgressText"), challengeProgressPercent: $("challengeProgressPercent"), challengeProgressBar: $("challengeProgressBar"), levelNav: $("levelNav"), challengeNav: $("challengeNav"), challengeNavStatus: $("challengeNavStatus"), scenarioState: $("scenarioState"), topLevel: $("topLevel"), topXp: $("topXp"), topStreak: $("topStreak"),
         commandSearch: $("commandSearch"), commandFilters: $("commandFilters"), commandGrid: $("commandGrid"), resetPractice: $("resetPractice")
       };
       const lessonBinding = { output: $("lessonOutput"), prompt: $("lessonPrompt"), input: $("lessonInput"), engine: null, type: "lesson" };
@@ -1609,10 +1620,13 @@
         refs.topStreak.textContent = `${state.data.streak || 0}d`;
         refs.topLevel.textContent = String(currentChallenge.level).padStart(2, "0");
       }
+      function unlockedThroughIndex() {
+        const firstIncomplete = state.firstIncompleteIndex();
+        return firstIncomplete < 0 ? challengeList.length - 1 : firstIncomplete;
+      }
       function renderLevelNav() {
         refs.levelNav.innerHTML = "";
-        const firstIncomplete = state.firstIncompleteIndex();
-        const unlockThrough = firstIncomplete < 0 ? challengeList.length : firstIncomplete;
+        const unlockThrough = unlockedThroughIndex();
         ChallengeEngine.levels().forEach(({ level }) => {
           const indices = challengeList.map((challenge, index) => challenge.level === level ? index : -1).filter((index) => index >= 0);
           const first = indices[0];
@@ -1623,10 +1637,30 @@
           button.title = challengeList[first].levelName;
           button.setAttribute("aria-label", `Level ${level}: ${challengeList[first].levelName}`);
           button.disabled = first > unlockThrough;
-          if (last < unlockThrough) button.classList.add("done");
+          if (indices.every((index) => state.isCompleted(challengeList[index].id))) button.classList.add("done");
           if (currentChallenge.level === level) button.classList.add("current");
           button.addEventListener("click", () => { const firstOfLevel = indices[0]; if (firstOfLevel <= unlockThrough) loadChallenge(firstOfLevel); });
           refs.levelNav.appendChild(button);
+        });
+      }
+      function renderChallengeNav() {
+        refs.challengeNav.innerHTML = "";
+        const unlockThrough = unlockedThroughIndex();
+        refs.challengeNavStatus.textContent = `${unlockThrough + 1} / ${challengeList.length} available`;
+        challengeList.forEach((challenge, index) => {
+          const completed = state.isCompleted(challenge.id);
+          const current = currentIndex === index;
+          const button = document.createElement("button");
+          button.className = "challenge-item";
+          button.textContent = String(index + 1).padStart(2, "0");
+          button.title = `Challenge ${index + 1}: ${challenge.title}`;
+          button.setAttribute("aria-label", `Challenge ${index + 1}: ${challenge.title} (${current ? "current" : completed ? "completed" : index === unlockThrough ? "available" : "locked"})`);
+          button.disabled = index > unlockThrough;
+          button.dataset.challengeIndex = String(index);
+          if (completed) button.classList.add("done");
+          if (current) { button.classList.add("current"); button.setAttribute("aria-current", "step"); }
+          button.addEventListener("click", () => loadChallenge(index));
+          refs.challengeNav.appendChild(button);
         });
       }
       function renderChallenge() {
@@ -1646,6 +1680,7 @@
         renderHints();
         renderProgress();
         renderLevelNav();
+        renderChallengeNav();
         if (refs.onboarding.classList.contains("hidden")) lessonBinding.input.focus();
       }
       function loadChallenge(index) {
@@ -1672,6 +1707,7 @@
         refs.continueChallenge.hidden = false;
         renderProgress();
         renderLevelNav();
+        renderChallengeNav();
         showToast(`+${gained} XP`);
       }
       function showNextHint() {

@@ -69,6 +69,44 @@ test("onboarding requires and personalizes the terminal user", async () => {
   assert.match(window.document.getElementById("lessonOutput").textContent, /ada-lovelace/);
 });
 
+test("challenge map revisits completed challenges and the current challenge", async () => {
+  const window = bootApp();
+  await settle(window);
+  const name = window.document.getElementById("playerName");
+  name.value = "Ada Lovelace";
+  click(window, "startButton");
+  await settle(window);
+
+  const input = window.document.getElementById("lessonInput");
+  const challengeButtons = () => [...window.document.querySelectorAll("#challengeNav .challenge-item")];
+  assert.equal(challengeButtons().length, 66);
+  assert.equal(window.document.getElementById("challengeNavStatus").textContent, "1 / 66 available");
+  assert.equal(challengeButtons()[0].disabled, false);
+  assert.equal(challengeButtons()[1].disabled, true);
+
+  typeCommand(window, input, "pwd");
+  click(window, "checkChallenge");
+  click(window, "continueChallenge");
+  typeCommand(window, input, "ls");
+  click(window, "checkChallenge");
+  click(window, "continueChallenge");
+
+  assert.equal(window.document.getElementById("lessonTitle").textContent, "Know the user");
+  assert.equal(window.document.getElementById("challengeNavStatus").textContent, "3 / 66 available");
+  assert.equal(challengeButtons()[0].classList.contains("done"), true);
+  assert.equal(challengeButtons()[1].classList.contains("done"), true);
+  assert.equal(challengeButtons()[2].classList.contains("current"), true);
+  assert.equal(challengeButtons()[3].disabled, true);
+
+  challengeButtons()[0].click();
+  assert.equal(window.document.getElementById("lessonTitle").textContent, "Find your bearings");
+  assert.equal(window.document.getElementById("challengeProgressText").textContent, "2 / 66 challenges");
+  assert.equal(window.document.querySelector('#challengeNav button[data-challenge-index="0"]').getAttribute("aria-current"), "step");
+
+  window.document.querySelector('#challengeNav button[data-challenge-index="2"]').click();
+  assert.equal(window.document.getElementById("lessonTitle").textContent, "Know the user");
+});
+
 test("all 66 challenges can be completed", async () => {
   assert.equal(solutions.length, 66, "the challenge suite must contain exactly 66 solutions");
   const window = bootApp();
