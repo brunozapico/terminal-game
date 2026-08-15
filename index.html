@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0a0c0f">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
   <title>Terminal Quest — Learn by using the terminal</title>
   <style>
     :root {
@@ -238,7 +241,7 @@
             <div class="section-label">Challenge</div>
             <div class="objective" id="lessonObjective"><strong>Objective</strong><span id="lessonObjectiveText"></span></div>
             <div class="hint-box" id="hintBox"><strong id="hintLabel">Hint</strong><span id="hintText"></span></div>
-            <div class="feedback" id="challengeFeedback"><div class="feedback-title" id="feedbackTitle"></div><div class="feedback-detail" id="feedbackDetail"></div></div>
+            <div class="feedback" id="challengeFeedback" aria-live="polite" aria-atomic="true"><div class="feedback-title" id="feedbackTitle"></div><div class="feedback-detail" id="feedbackDetail"></div></div>
             <div class="lesson-spacer"></div>
             <div class="lesson-actions">
               <button class="secondary-button" id="hintButton">Hint</button>
@@ -292,10 +295,10 @@
     </main>
   </div>
 
-  <div class="modal-backdrop" id="onboardingModal">
+  <div class="modal-backdrop" id="onboardingModal" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
     <div class="onboarding">
       <div class="brand-mark">&gt;_</div>
-      <h1>Terminal Quest</h1>
+      <h1 id="onboardingTitle">Terminal Quest</h1>
       <p>Learn the terminal by using the terminal.</p>
       <div class="platforms"><span class="platform-badge mac">macOS</span><span class="platform-badge linux">Linux</span></div>
       <button class="primary-button" id="startButton">Start</button>
@@ -319,6 +322,7 @@
       const basename = (path) => { const parts = path.split("/").filter(Boolean); return parts[parts.length - 1] || "/"; };
       const dirname = (path) => { const parts = path.split("/").filter(Boolean); parts.pop(); return "/" + parts.join("/"); };
       const modeNumber = (mode) => parseInt(String(mode || "644").replace(/[^0-7]/g, "") || "644", 8);
+      const formatMode = (mode) => (typeof mode === "number" ? mode : modeNumber(mode)).toString(8).padStart(3, "0").slice(-3);
       const formatBytes = (bytes) => bytes < 1024 ? `${bytes}B` : bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)}K` : `${(bytes / (1024 * 1024)).toFixed(1)}M`;
       const result = (stdout = "", stderr = "", extra = {}) => ({ stdout, stderr, code: stderr ? 1 : 0, ...extra });
 
@@ -385,6 +389,17 @@
           if (abs === "/") return { abs, parent: null, name: "/" };
           return { abs, parent: this._node(dirname(abs)), name: basename(abs) };
         }
+        permission(node, access, user = this.user) {
+          if (!node || user === "root") return !!node;
+          const owner = node.owner === user;
+          const bits = owner
+            ? { read: 0o400, write: 0o200, execute: 0o100 }
+            : { read: 0o004, write: 0o002, execute: 0o001 };
+          return (modeNumber(node.mode) & (bits[access] || 0)) !== 0;
+        }
+        canModifyParent(parent, user = this.user) {
+          return !!parent && parent.type === "dir" && this.permission(parent, "write", user) && this.permission(parent, "execute", user);
+        }
         putDir(path, mode = "755") {
           const abs = this.normalize(path, "/");
           if (abs === "/") return this.root;
@@ -402,15 +417,17 @@
           parent.children[name] = this.makeFile(name, content, mode, extra);
           return parent.children[name];
         }
-        mkdir(path, cwd, recursive = false) {
+        mkdir(path, cwd, recursive = false, user = this.user) {
           const abs = this.normalize(path, cwd);
           if (abs === "/") return { ok: false, error: "File exists" };
           const parts = abs.split("/").filter(Boolean);
           let current = this.root;
           for (let index = 0; index < parts.length; index += 1) {
             const part = parts[index];
+            if (!this.permission(current, "execute", user)) return { ok: false, error: "Permission denied" };
             if (!current.children[part]) {
               if (!recursive && index !== parts.length - 1) return { ok: false, error: "No such file or directory" };
+              if (!this.canModifyParent(current, user)) return { ok: false, error: "Permission denied" };
               current.children[part] = this.makeDir(part);
             } else if (current.children[part].type !== "dir") {
               return { ok: false, error: "Not a directory" };
@@ -421,61 +438,62 @@
           }
           return { ok: true };
         }
-        touch(path, cwd) {
+        touch(path, cwd, user = this.user) {
           const { parent, name } = this.parentFor(path, cwd);
-          if (!parent) return { ok: false, error: "Permission denied" };
-          if (parent.type !== "dir") return { ok: false, error: "Not a directory" };
+          if (!this.canModifyParent(parent, user)) return { ok: false, error: "Permission denied" };
           if (!parent.children[name]) parent.children[name] = this.makeFile(name);
           else if (parent.children[name].type === "dir") return { ok: false, error: "Is a directory" };
           return { ok: true };
         }
-        write(path, cwd, content, append = false) {
+        write(path, cwd, content, append = false, user = this.user) {
           const { parent, name } = this.parentFor(path, cwd);
-          if (!parent) return { ok: false, error: "Permission denied" };
-          if (parent.type !== "dir") return { ok: false, error: "Not a directory" };
+          if (!this.canModifyParent(parent, user)) return { ok: false, error: "Permission denied" };
           if (parent.children[name] && parent.children[name].type === "dir") return { ok: false, error: "Is a directory" };
+          if (parent.children[name] && !this.permission(parent.children[name], "write", user)) return { ok: false, error: "Permission denied" };
           if (!parent.children[name]) parent.children[name] = this.makeFile(name, content);
           else parent.children[name].content = append ? parent.children[name].content + content : content;
           return { ok: true };
         }
-        remove(path, cwd, recursive = false, force = false) {
+        remove(path, cwd, recursive = false, force = false, user = this.user) {
           const record = this.parentFor(path, cwd);
           const node = this.get(path, cwd);
           if (!node) return force ? { ok: true } : { ok: false, error: "No such file or directory" };
           if (record.abs === "/") return { ok: false, error: "Permission denied" };
           if (node.type === "dir" && !recursive) return { ok: false, error: "Is a directory" };
           if (node.type === "dir" && Object.keys(node.children).length && !recursive) return { ok: false, error: "Directory not empty" };
-          if (!record.parent || record.parent.type !== "dir") return { ok: false, error: "Permission denied" };
+          if (!this.canModifyParent(record.parent, user)) return { ok: false, error: "Permission denied" };
           delete record.parent.children[record.name];
           return { ok: true };
         }
-        rmdir(path, cwd) {
+        rmdir(path, cwd, user = this.user) {
           const node = this.get(path, cwd);
           if (!node) return { ok: false, error: "No such file or directory" };
           if (node.type !== "dir") return { ok: false, error: "Not a directory" };
           if (Object.keys(node.children).length) return { ok: false, error: "Directory not empty" };
           const record = this.parentFor(path, cwd);
-          if (!record.parent || record.parent.type !== "dir") return { ok: false, error: "Permission denied" };
+          if (!this.canModifyParent(record.parent, user)) return { ok: false, error: "Permission denied" };
           delete record.parent.children[record.name];
           return { ok: true };
         }
-        copy(source, destination, cwd, recursive = false) {
+        copy(source, destination, cwd, recursive = false, user = this.user) {
           const sourceAbs = this.normalize(source, cwd);
           const sourceNode = this._node(sourceAbs);
           if (!sourceNode) return { ok: false, error: "No such file or directory" };
           if (sourceNode.type === "dir" && !recursive) return { ok: false, error: "omitting directory" };
+          if (sourceNode.type === "file" && !this.permission(sourceNode, "read", user)) return { ok: false, error: "Permission denied" };
+          if (sourceNode.type === "dir" && (!this.permission(sourceNode, "read", user) || !this.permission(sourceNode, "execute", user))) return { ok: false, error: "Permission denied" };
           let destinationAbs = this.normalize(destination, cwd);
           const destinationNode = this._node(destinationAbs);
           if (destinationNode && destinationNode.type === "dir") destinationAbs = `${destinationAbs.replace(/\/$/, "")}/${basename(sourceAbs)}`;
           const parent = this._node(dirname(destinationAbs));
           if (!parent) return { ok: false, error: "No such file or directory" };
-          if (parent.type !== "dir") return { ok: false, error: "Not a directory" };
+          if (!this.canModifyParent(parent, user)) return { ok: false, error: "Permission denied" };
           const copy = this.cloneNode(sourceNode);
           copy.name = basename(destinationAbs);
           parent.children[copy.name] = copy;
           return { ok: true };
         }
-        move(source, destination, cwd) {
+        move(source, destination, cwd, user = this.user) {
           const sourceAbs = this.normalize(source, cwd);
           const sourceNode = this._node(sourceAbs);
           if (!sourceNode) return { ok: false, error: "No such file or directory" };
@@ -484,8 +502,9 @@
           if (destinationNode && destinationNode.type === "dir") destinationAbs = `${destinationAbs.replace(/\/$/, "")}/${basename(sourceAbs)}`;
           const parent = this._node(dirname(destinationAbs));
           if (!parent) return { ok: false, error: "No such file or directory" };
-          if (parent.type !== "dir") return { ok: false, error: "Not a directory" };
+          if (!this.canModifyParent(parent, user)) return { ok: false, error: "Permission denied" };
           const sourceRecord = this.parentFor(sourceAbs, "/");
+          if (!this.canModifyParent(sourceRecord.parent, user)) return { ok: false, error: "Permission denied" };
           if (sourceRecord.parent === parent && sourceRecord.name === basename(destinationAbs)) return { ok: true };
           const moved = this.cloneNode(sourceNode);
           moved.name = basename(destinationAbs);
@@ -493,27 +512,29 @@
           delete sourceRecord.parent.children[sourceRecord.name];
           return { ok: true };
         }
-        list(path, cwd, all = false) {
+        list(path, cwd, all = false, user = this.user) {
           const abs = this.normalize(path, cwd);
           const node = this._node(abs);
           if (!node) return { ok: false, error: "No such file or directory" };
           if (node.type === "file") return { ok: true, entries: [{ name: basename(abs), node }] };
+          if (!this.permission(node, "read", user) || !this.permission(node, "execute", user)) return { ok: false, error: "Permission denied" };
           let names = Object.keys(node.children).sort((a, b) => a.localeCompare(b));
           if (all) names = [".", "..", ...names];
           return { ok: true, entries: names.map((name) => ({ name, node: name === "." ? node : name === ".." ? this._node(dirname(abs)) || this.root : node.children[name] })) };
         }
-        read(path, cwd) {
+        read(path, cwd, user = this.user) {
           const node = this.get(path, cwd);
           if (!node) return { ok: false, error: "No such file or directory" };
           if (node.type !== "file") return { ok: false, error: "Is a directory" };
+          if (!this.permission(node, "read", user)) return { ok: false, error: "Permission denied" };
           return { ok: true, content: node.content };
         }
-        chmod(path, cwd, mode) {
+        chmod(path, cwd, mode, user = this.user) {
           const node = this.get(path, cwd);
           if (!node) return { ok: false, error: "No such file or directory" };
-          if (node.type === "dir" && mode === "+x") node.mode = "755";
-          else if (mode === "+x") node.mode = String(modeNumber(node.mode) | 0o111).slice(-3);
-          else if (mode === "-x") node.mode = String(modeNumber(node.mode) & 0o666).padStart(3, "0");
+          if (user !== "root" && node.owner !== user) return { ok: false, error: "Operation not permitted" };
+          if (mode === "+x") node.mode = formatMode(modeNumber(node.mode) | 0o111);
+          else if (mode === "-x") node.mode = formatMode(modeNumber(node.mode) & ~0o111);
           else if (/^[0-7]{3,4}$/.test(mode)) node.mode = mode.slice(-3);
           else return { ok: false, error: "invalid mode" };
           return { ok: true };
@@ -682,7 +703,7 @@
       const COMMANDS = Object.create(null);
       const registerCommand = (name, definition) => { COMMANDS[name] = { name, category: "Shell", platforms: ["macOS + Linux"], examples: [], options: [], ...definition }; };
       const commandError = (name, message) => result("", `${name}: ${message}\n`);
-      const readOne = (ctx, path) => ctx.fs.read(path, ctx.cwd);
+      const readOne = (ctx, path) => ctx.fs.read(path, ctx.cwd, ctx.engine.user);
       const readSources = (ctx, args, stdin = "") => {
         if (!args.length) return { ok: true, content: stdin, names: [] };
         let content = "";
@@ -781,7 +802,7 @@
             clear = clear || !!commandResult.clear;
             if (command.redirect && stdout) {
               const target = command.redirect.target.expand ? expandVariables(command.redirect.target.value, this.env) : command.redirect.target.value;
-              const written = this.fs.write(target, this.cwd, stdout, command.redirect.append);
+              const written = this.fs.write(target, this.cwd, stdout, command.redirect.append, this.user);
               if (!written.ok) stderr += `${target}: ${written.error}\n`;
               stdout = "";
             }
@@ -867,7 +888,7 @@
             let output = "";
             let stderr = "";
             targets.forEach((target, index) => {
-              const listing = ctx.fs.list(target, ctx.cwd);
+              const listing = ctx.fs.list(target, ctx.cwd, flags.has("a"), ctx.engine.user);
               if (!listing.ok) { stderr += `ls: ${target}: ${listing.error}\n`; return; }
               if (targets.length > 1) output += `${target}:\n`;
               output += formatList(listing.entries, flags.has("l"));
@@ -891,6 +912,7 @@
           const node = ctx.fs.get(target, ctx.cwd);
           if (!node) return commandError("cd", `no such file or directory: ${target}`);
           if (node.type !== "dir") return commandError("cd", `not a directory: ${target}`);
+          if (!ctx.fs.permission(node, "execute", ctx.engine.user)) return commandError("cd", `permission denied: ${target}`);
           ctx.engine.cwd = ctx.fs.normalize(target, ctx.cwd);
           return result();
         }
@@ -901,7 +923,7 @@
           const { flags, rest } = flagSet(args);
           if (!rest.length) return commandError("mkdir", "missing operand");
           let stderr = "";
-          rest.forEach((path) => { const made = ctx.fs.mkdir(path, ctx.cwd, flags.has("p")); if (!made.ok) stderr += `mkdir: cannot create directory '${path}': ${made.error}\n`; });
+          rest.forEach((path) => { const made = ctx.fs.mkdir(path, ctx.cwd, flags.has("p"), ctx.engine.user); if (!made.ok) stderr += `mkdir: cannot create directory '${path}': ${made.error}\n`; });
           return result("", stderr);
         }
       });
@@ -910,7 +932,7 @@
         execute: (args, ctx) => {
           if (!args.length) return commandError("rmdir", "missing operand");
           let stderr = "";
-          args.forEach((path) => { const removed = ctx.fs.rmdir(path, ctx.cwd); if (!removed.ok) stderr += `rmdir: failed to remove '${path}': ${removed.error}\n`; });
+          args.forEach((path) => { const removed = ctx.fs.rmdir(path, ctx.cwd, ctx.engine.user); if (!removed.ok) stderr += `rmdir: failed to remove '${path}': ${removed.error}\n`; });
           return result("", stderr);
         }
       });
@@ -919,7 +941,7 @@
         execute: (args, ctx) => {
           if (!args.length) return commandError("touch", "missing file operand");
           let stderr = "";
-          args.forEach((path) => { const made = ctx.fs.touch(path, ctx.cwd); if (!made.ok) stderr += `touch: ${path}: ${made.error}\n`; });
+          args.forEach((path) => { const made = ctx.fs.touch(path, ctx.cwd, ctx.engine.user); if (!made.ok) stderr += `touch: ${path}: ${made.error}\n`; });
           return result("", stderr);
         }
       });
@@ -930,7 +952,7 @@
           if (rest.length < 2) return commandError("cp", "missing destination file operand");
           const destination = rest[rest.length - 1];
           let stderr = "";
-          rest.slice(0, -1).forEach((source) => { const copied = ctx.fs.copy(source, destination, ctx.cwd, flags.has("r")); if (!copied.ok) stderr += `cp: ${source}: ${copied.error}\n`; });
+          rest.slice(0, -1).forEach((source) => { const copied = ctx.fs.copy(source, destination, ctx.cwd, flags.has("r"), ctx.engine.user); if (!copied.ok) stderr += `cp: ${source}: ${copied.error}\n`; });
           return result("", stderr);
         }
       });
@@ -940,7 +962,7 @@
           if (args.length < 2) return commandError("mv", "missing destination file operand");
           const destination = args[args.length - 1];
           let stderr = "";
-          args.slice(0, -1).forEach((source) => { const moved = ctx.fs.move(source, destination, ctx.cwd); if (!moved.ok) stderr += `mv: ${source}: ${moved.error}\n`; });
+          args.slice(0, -1).forEach((source) => { const moved = ctx.fs.move(source, destination, ctx.cwd, ctx.engine.user); if (!moved.ok) stderr += `mv: ${source}: ${moved.error}\n`; });
           return result("", stderr);
         }
       });
@@ -951,7 +973,7 @@
           if (!rest.length) return commandError("rm", "missing operand");
           let stderr = "";
           let warning = flags.has("r") && flags.has("f") ? "warning: rm -rf is powerful; here it only affects this virtual filesystem.\n" : "";
-          rest.forEach((path) => { const removed = ctx.fs.remove(path, ctx.cwd, flags.has("r"), flags.has("f")); if (!removed.ok) stderr += `rm: ${path}: ${removed.error}\n`; });
+          rest.forEach((path) => { const removed = ctx.fs.remove(path, ctx.cwd, flags.has("r"), flags.has("f"), ctx.engine.user); if (!removed.ok) stderr += `rm: ${path}: ${removed.error}\n`; });
           return result(warning, stderr);
         }
       });
@@ -997,8 +1019,16 @@
             const node = ctx.fs.get(target, ctx.cwd);
             if (!node) records.push({ error: `${target}: No such file or directory` });
             else if (node.type === "dir" && !flags.has("r")) records.push({ error: `${target}: Is a directory` });
-            else if (node.type === "dir") ctx.fs.collectFiles(target, ctx.cwd).forEach((entry) => records.push({ name: outputPathForFind(entry.abs, target, ctx.fs.normalize(target, ctx.cwd)), content: entry.node.content }));
-            else records.push({ name: target, content: node.content });
+            else if (node.type === "dir") ctx.fs.collectFiles(target, ctx.cwd).forEach((entry) => {
+              const read = ctx.fs.read(entry.abs, ctx.cwd, ctx.engine.user);
+              if (read.ok) records.push({ name: outputPathForFind(entry.abs, target, ctx.fs.normalize(target, ctx.cwd)), content: read.content });
+              else records.push({ error: `${target}: ${read.error}` });
+            });
+            else {
+              const read = ctx.fs.read(target, ctx.cwd, ctx.engine.user);
+              if (read.ok) records.push({ name: target, content: read.content });
+              else records.push({ error: `${target}: ${read.error}` });
+            }
           });
           const multiple = records.filter((record) => !record.error).length > 1;
           let output = "";
@@ -1100,11 +1130,22 @@
       });
       registerCommand("chmod", {
         category: "Permissions", description: "Change a virtual file's permission mode.", examples: ["chmod +x script.sh", "chmod 755 deploy.sh"], options: ["+x add execute permission", "755 owner/group/other mode"], help: "chmod MODE file\n\nPractice r, w and x permissions with symbolic +x or numeric modes such as 755.",
-        execute: (args, ctx) => { if (args.length < 2) return commandError("chmod", "missing operand"); const mode = args[0]; let stderr = ""; args.slice(1).forEach((path) => { const changed = ctx.fs.chmod(path, ctx.cwd, mode); if (!changed.ok) stderr += `chmod: ${path}: ${changed.error}\n`; }); return result("", stderr); }
+        execute: (args, ctx) => { if (args.length < 2) return commandError("chmod", "missing operand"); const mode = args[0]; let stderr = ""; args.slice(1).forEach((path) => { const changed = ctx.fs.chmod(path, ctx.cwd, mode, ctx.engine.user); if (!changed.ok) stderr += `chmod: ${path}: ${changed.error}\n`; }); return result("", stderr); }
       });
       registerCommand("ping", {
         category: "Network", description: "Test reachability in a simulated network.", examples: ["ping raspberrypi"], options: ["-c count number of packets"], help: "ping [-c count] host\n\nGenerate fictional responses. No packets leave this browser.",
-        execute: (args) => { const host = args.find((arg) => !arg.startsWith("-")) || "localhost"; const countIndex = args.indexOf("-c"); const count = countIndex >= 0 ? Number(args[countIndex + 1]) || 3 : 3; return result(`PING ${host} (${host}) 56 data bytes\n${Array.from({ length: count }, (_, index) => `64 bytes from ${host}: icmp_seq=${index + 1} ttl=64 time=${(12 + index * 2.1).toFixed(1)} ms`).join("\n")}\n\n--- ${host} ping statistics ---\n${count} packets transmitted, ${count} packets received, 0.0% packet loss\n`); }
+        execute: (args) => {
+          let host = "localhost";
+          let count = 3;
+          for (let index = 0; index < args.length; index += 1) {
+            if (args[index] === "-c") {
+              const requested = Number(args[++index]);
+              if (!Number.isInteger(requested) || requested < 1 || requested > 20) return commandError("ping", "count must be an integer from 1 to 20");
+              count = requested;
+            } else if (!args[index].startsWith("-")) host = args[index];
+          }
+          return result(`PING ${host} (${host}) 56 data bytes\n${Array.from({ length: count }, (_, index) => `64 bytes from ${host}: icmp_seq=${index + 1} ttl=64 time=${(12 + index * 2.1).toFixed(1)} ms`).join("\n")}\n\n--- ${host} ping statistics ---\n${count} packets transmitted, ${count} packets received, 0.0% packet loss\n`);
+        }
       });
       registerCommand("curl", {
         category: "Network", description: "Inspect a simulated HTTP response.", examples: ["curl https://example.com/health"], options: ["-I headers only"], help: "curl [-I] URL\n\nFetch a canned response inside the simulation; it never connects to the internet.",
@@ -1245,7 +1286,7 @@
       const addDir = (scenario, path) => scenario.fs.putDir(path);
       const base = () => makeBaseScenario();
       const challengeList = [
-        makeChallenge({ id: "orientation-01", level: 1, levelName: "Where am I?", title: "Find your bearings", explanation: "Antes de tocar nada, ubicá tu sesión. La terminal siempre tiene un directorio de trabajo actual.", example: "pwd", objective: "Mostrá el directorio en el que estás.", solution: "pwd", validator: (check) => checkResult(check.cwd === HOME, "La sesión todavía no está mostrando tu carpeta personal."), hints: ["Necesitás una orden que imprima tu ubicación actual.", "El comando tiene tres letras y empieza con p.", "pwd"] }),
+        makeChallenge({ id: "orientation-01", level: 1, levelName: "Where am I?", title: "Find your bearings", explanation: "Antes de tocar nada, ubicá tu sesión. La terminal siempre tiene un directorio de trabajo actual.", example: "pwd", objective: "Mostrá el directorio en el que estás.", solution: "pwd", validator: (check) => checkResult(check.history.includes("pwd") && String(check.output).trim() === HOME, "Ejecutá pwd y verificá la carpeta personal."), hints: ["Necesitás una orden que imprima tu ubicación actual.", "El comando tiene tres letras y empieza con p.", "pwd"] }),
         makeChallenge({ id: "orientation-02", level: 1, levelName: "Where am I?", title: "Read the room", explanation: "Listar primero te permite ver qué opciones tenés antes de elegir una ruta.", example: "ls\nls -la", objective: "Listá el contenido de tu carpeta personal.", solution: "ls", validator: (check) => checkResult(["Desktop", "Documents", "Downloads", "projects"].every((name) => String(check.output).includes(name)), "La salida todavía no muestra el contenido esperado de tu carpeta personal.") }),
         makeChallenge({ id: "orientation-03", level: 1, levelName: "Where am I?", title: "Know the user", explanation: "En una Mac o en un servidor, saber con qué usuario estás operando evita sorpresas con permisos.", example: "whoami", objective: "Averiguá qué usuario está ejecutando esta sesión.", solution: "whoami", validator: (check) => checkResult(outputContains(check, "bruno"), "Todavía no aparece el usuario de la sesión."), hints: ["Buscá un comando que responda la pregunta ‘¿quién soy?’. ", "Es una sola palabra, muy descriptiva.", "whoami"] }),
         makeChallenge({ id: "orientation-04", level: 1, levelName: "Where am I?", title: "See the hidden layer", explanation: "Los nombres que empiezan con un punto suelen guardar configuración. No aparecen en un ls común.", example: "ls -la", objective: "Listá los archivos ocultos y la información larga de tu carpeta personal.", solution: "ls -la", setup: () => { const scenario = base(); addFile(scenario, `${scenario.fs.home}/.config`, "theme=dark\n"); addFile(scenario, `${scenario.fs.home}/.env`, "MODE=practice\n"); return scenario; }, validator: (check) => checkResult(outputContains(check, ".config") && outputContains(check, ".env") && outputContains(check, "total"), "Faltan los archivos ocultos o el formato largo en la salida."), hints: ["ls acepta opciones para incluir ocultos y mostrar detalles.", "Las dos opciones son -a y -l; pueden combinarse.", "ls -la"] }),
@@ -1254,7 +1295,7 @@
         makeChallenge({ id: "navigation-02", level: 2, levelName: "Move Around", title: "Take one step back", explanation: "El nombre .. representa el directorio padre, una de las piezas más importantes para moverte con rapidez.", example: "cd ..", objective: "Volvé a tu carpeta personal desde projects.", solution: "cd ..", setup: () => { const scenario = base(); scenario.cwd = `${scenario.fs.home}/projects`; return scenario; }, validator: (check) => checkResult(check.cwd === HOME, "El directorio actual todavía no es tu carpeta personal.") }),
         makeChallenge({ id: "navigation-03", level: 2, levelName: "Move Around", title: "Go home", explanation: "~ es un atajo portable hacia tu carpeta personal.", example: "cd ~", objective: "Volvé a tu carpeta personal usando ~.", solution: "cd ~", setup: () => { const scenario = base(); scenario.cwd = `${scenario.fs.home}/Downloads`; return scenario; }, validator: (check) => checkResult(check.cwd === HOME, "~ todavía no te llevó a tu carpeta personal.") }),
         makeChallenge({ id: "navigation-04", level: 2, levelName: "Move Around", title: "Visit the root", explanation: "La barra inicial representa la raíz de todo el filesystem.", example: "cd /\nls", objective: "Llegá a la raíz del filesystem virtual.", solution: "cd /", validator: (check) => checkResult(check.cwd === "/", "Todavía no estás en /.") }),
-        makeChallenge({ id: "navigation-05", level: 2, levelName: "Move Around", title: "Stay put", explanation: ". representa el directorio actual. Es útil al pasar rutas a otros comandos.", example: "cd .", objective: "Usá . sin cambiar tu ubicación actual.", solution: "cd .", validator: (check) => checkResult(check.cwd === HOME, "La ubicación final no coincide con el punto de partida."), hints: ["El punto representa dónde estás.", "Podés usarlo como destino de cd.", "cd ."] }),
+        makeChallenge({ id: "navigation-05", level: 2, levelName: "Move Around", title: "Stay put", explanation: ". representa el directorio actual. Es útil al pasar rutas a otros comandos.", example: "cd .", objective: "Usá . sin cambiar tu ubicación actual.", solution: "cd .", validator: (check) => checkResult(check.history.includes("cd .") && check.cwd === HOME, "Ejecutá cd . para confirmar el directorio actual."), hints: ["El punto representa dónde estás.", "Podés usarlo como destino de cd.", "cd ."] }),
 
         makeChallenge({ id: "build-01", level: 3, levelName: "Build Something", title: "Make a room", explanation: "Los directorios son contenedores. Creá uno pequeño antes de llenarlo.", example: "mkdir projects", objective: "Dentro de sandbox, creá un directorio llamado projects.", solution: "mkdir projects", setup: sandboxSetup(), validator: (check) => checkResult(check.fs.isDir("projects", check.cwd), "Todavía no existe el directorio projects dentro de sandbox.") }),
         makeChallenge({ id: "build-02", level: 3, levelName: "Build Something", title: "Build a path", explanation: "mkdir -p evita tener que crear cada directorio intermedio por separado.", example: "mkdir -p src/components", objective: "Dentro de sandbox, creá la ruta src/components de una sola vez.", solution: "mkdir -p src/components", setup: sandboxSetup(), validator: (check) => checkResult(check.fs.isDir("src/components", check.cwd), "La ruta anidada todavía no está completa.") }),
@@ -1541,6 +1582,7 @@
           button.className = "level-item";
           button.textContent = String(level).padStart(2, "0");
           button.title = challengeList[first].levelName;
+          button.setAttribute("aria-label", `Level ${level}: ${challengeList[first].levelName}`);
           button.disabled = first > unlockThrough;
           if (last < unlockThrough) button.classList.add("done");
           if (currentChallenge.level === level) button.classList.add("current");
@@ -1565,7 +1607,7 @@
         renderHints();
         renderProgress();
         renderLevelNav();
-        lessonBinding.input.focus();
+        if (refs.onboarding.classList.contains("hidden")) lessonBinding.input.focus();
       }
       function loadChallenge(index) {
         currentIndex = clamp(index, 0, challengeList.length - 1);
@@ -1623,6 +1665,7 @@
         switchView("learn");
         renderChallenge();
         renderProgress();
+        refs.start.focus();
         showToast("Progress reset");
       }
 
@@ -1655,7 +1698,7 @@
       practiceBinding.input.addEventListener("keydown", (event) => handleTerminalKeydown(event, practiceBinding));
       refs.navButtons.forEach((button) => button.addEventListener("click", () => switchView(button.dataset.view)));
       refs.brand.addEventListener("click", () => switchView("learn"));
-      refs.start.addEventListener("click", () => { state.start(); refs.onboarding.classList.add("hidden"); lessonBinding.input.focus(); });
+      refs.start.addEventListener("click", () => { state.start(); refs.onboarding.classList.add("hidden"); renderProgress(); lessonBinding.input.focus(); });
       refs.hintButton.addEventListener("click", showNextHint);
       refs.revealButton.addEventListener("click", revealAnswer);
       refs.resetChallenge.addEventListener("click", () => { clearFeedback(); resetLessonTerminal(); lessonBinding.input.focus(); });
@@ -1678,7 +1721,7 @@
       renderCommandGrid();
       renderChallenge();
       if (state.data.started) refs.onboarding.classList.add("hidden");
-      else refs.onboarding.classList.remove("hidden");
+      else { refs.onboarding.classList.remove("hidden"); refs.start.focus(); }
       renderProgress();
     })();
   </script>
