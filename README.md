@@ -1,30 +1,30 @@
 # Terminal Quest
 
-Aplicación web educativa gamificada para recuperar y desarrollar fluidez real con la terminal de macOS y Linux. Incluye una terminal simulada segura, filesystem virtual, desafíos progresivos, práctica libre, pistas, XP, streak, persistencia local y biblioteca de comandos.
+A gamified educational web app for building real fluency with the macOS and Linux terminal. It includes a safe simulated terminal, virtual filesystem, progressive challenges, free practice, hints, XP, streaks, local persistence, and a command library.
 
-## Ejecutar
+## Run locally
 
-Abrí `index.html` directamente en un navegador moderno. No requiere npm, servidor, build process ni dependencias externas.
+Open `index.html` directly in a modern browser. It requires no npm, server, build process, or external dependencies.
 
-También puede publicarse como sitio estático en Vercel:
+It can also be published as a static site on Vercel:
 
-1. Importá este repositorio.
-2. Elegí cualquier preset estático o dejá el framework vacío.
-3. Usá `./` como directorio raíz y sin comando de build.
+1. Import this repository.
+2. Choose any static preset or leave the framework empty.
+3. Use `./` as the root directory with no build command.
 
-## Agregar comandos
+## Add commands
 
-En el `<script>` de `index.html`, registrá un comando con `registerCommand("nombre", { ... })`. Cada definición puede incluir:
+In the `<script>` of `index.html`, register a command with `registerCommand("name", { ... })`. Each definition can include:
 
 - `category`, `description`, `platforms`;
 - `examples`, `options`, `help`;
-- `execute(args, ctx)`, que devuelve `result(stdout, stderr)`.
+- `execute(args, ctx)`, which returns `result(stdout, stderr)`.
 
-El comando queda disponible para la terminal y para `man`, `which` y Command library.
+The command becomes available in the terminal and through `man`, `which`, and the Command library.
 
-## Agregar desafíos
+## Add challenges
 
-Sumá un objeto mediante `makeChallenge({ ... })` dentro de `challengeList`. La estructura mínima es:
+Add an object with `makeChallenge({ ... })` inside `challengeList`. The minimum structure is:
 
 ```js
 makeChallenge({
@@ -37,12 +37,12 @@ makeChallenge({
   objective: "...",
   setup: () => makeBaseScenario(),
   validator: (check) => checkResult(
-    check.fs.exists("archivo.txt", check.cwd),
-    "El estado todavía no cumple el objetivo."
+    check.fs.exists("file.txt", check.cwd),
+    "The current state does not meet the objective yet."
   ),
   hints: ["...", "...", "..."],
-  solution: "touch archivo.txt"
+  solution: "touch file.txt"
 })
 ```
 
-Los validadores deben comprobar el estado final del filesystem o del entorno virtual, no comparar literalmente el comando escrito.
+Validators should check the final state of the virtual filesystem or environment rather than comparing the exact command text.
