@@ -46,6 +46,7 @@ test("social metadata and header structure are present", () => {
   assert.match(html, /window\.va = window\.va \|\| function \(\) \{ \(window\.vaq = window\.vaq \|\| \[\]\)\.push\(arguments\); \};/);
   assert.match(html, /<script defer src="\/_vercel\/insights\/script\.js"><\/script>/);
   assert.match(html, /connect-src 'self'/);
+  assert.match(html, /script-src 'self' 'unsafe-inline'/);
 });
 
 test("onboarding requires and personalizes the terminal user", async () => {
