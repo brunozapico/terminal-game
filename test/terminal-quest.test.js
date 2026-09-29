@@ -45,6 +45,7 @@ test("social metadata and header structure are present", () => {
   assert.ok(fs.existsSync(path.join(repoRoot, "og-image.png")), "raster social card image should exist");
   assert.match(html, /window\.va = window\.va \|\| function \(\) \{ \(window\.vaq = window\.vaq \|\| \[\]\)\.push\(arguments\); \};/);
   assert.match(html, /<script defer src="\/_vercel\/insights\/script\.js"><\/script>/);
+  assert.match(html, /connect-src 'self'/);
 });
 
 test("onboarding requires and personalizes the terminal user", async () => {
